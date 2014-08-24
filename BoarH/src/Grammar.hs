@@ -5,8 +5,12 @@ import Data.Map (Map)
 import qualified Data.Map as M
 import Data.Set (Set)
 import qualified Data.Set as S
+import MultiMap (MultiMap)
+import qualified MultiMap as MM
 import Data.Maybe (fromJust, fromMaybe, mapMaybe)
 import Control.Arrow (second)
+import Data.Monoid (Monoid(..))
+import Debug.Trace (trace)
 
 type Prod = []
 
@@ -47,6 +51,7 @@ toElemMap = M.fromListWith S.union . map (second S.singleton)
 setMapMaybe :: (Ord a, Ord b) => (a -> Maybe b) -> Set a -> Set b
 setMapMaybe f = S.fromList . mapMaybe f . S.toList
   
+-- | Check that a grammar is valid.
 valid :: Ord a => Grammar a -> Bool
 valid g = terms g `disjoint` nterms g &&
           all (all (all (iselem g))) (M.elems $ rules g)
@@ -77,10 +82,17 @@ fixpointSet f i = go i i
 constMap :: Ord k => v -> Set k -> Map k v      
 constMap v = M.fromSet (const v)
 
-fixpointPostMap :: (Ord k, Ord v) => (Map k (Set v) -> k -> Set v) -> Map k (Set v) -> Map k (Set v)
+fixpointPostMap :: (Ord k, Ord v) => (MultiMap k v -> k -> Set v) -> MultiMap k v -> MultiMap k v
 fixpointPostMap f = fixpointEq iter
   where
-    iter m = M.mapWithKey (\k v -> v `S.union` f m k) m
+    iter m = m `MM.union` MM.mapValuesWith (\k _ -> f m k) m
+
+fixpointMap :: (Ord k, Ord v) => (v -> Set v) -> MultiMap k v -> MultiMap k v
+fixpointMap f = fixpointEq iter
+  where
+    iter m = m `MM.union` MM.mapValues f m
+    
+    
     
 nullables :: Ord a => Grammar a -> Set a
 nullables g = fixpointEq nextNullables S.empty
@@ -96,77 +108,85 @@ nullables g = fixpointEq nextNullables S.empty
         ns' = S.fromList $ M.keys nullableMap
       
       
-firsts :: forall a . Ord a => Grammar a -> Map a (Set a)
-firsts g = fixpointPostMap nextFirst (constMap S.empty (nterms g))
+firsts :: forall a . (Show a, Ord a) => Grammar a -> MultiMap a a
+firsts g = trace (show termFirsts) $ MM.transitiveClosure allPossibleFirsts
   where
     nullableSet = nullables g
-   
-    getFirst :: Map a (Set a) -> a -> Set a
-    getFirst m a = if isterm g a
-      then S.singleton a
-      else m M.! a
     
-    prodFirst :: Map a (Set a) -> Prod a -> Set a
-    prodFirst m l = case l of
-      [] -> S.empty
-      a:r -> let currFirst = getFirst m a
-             in if a `S.member` nullableSet
-               then currFirst `S.union` prodFirst m r
-               else currFirst
-               
-    listFirsts :: Map a (Set a) -> [Prod a] -> Set a
-    listFirsts m s = S.unions (map (prodFirst m) s) 
-      
-    nextFirst :: Map a (Set a) -> a -> Set a
-    nextFirst m a = 
-      let arules = rules g M.! a
-      in listFirsts m arules
+    possibleFirsts :: Prod a -> Set a
+    possibleFirsts [] = S.empty
+    possibleFirsts (a:r) =
+      S.singleton a `S.union`
+        if a `S.member` nullableSet then possibleFirsts r else S.empty
+        
+    ntermPossibleFirsts ps = S.unions $ map possibleFirsts ps
+    
+    termFirsts = MM.fromSet S.singleton (terms g)
+    ntermFirsts = MM.fromSet (\nt -> ntermPossibleFirsts (rules g M.! nt)) (nterms g)
+     
+    allPossibleFirsts = termFirsts `MM.union` ntermFirsts
       
 data FollowItem a = NextItem a
                   | EndItemParent a
   deriving (Eq, Ord, Show)
+  
+aggregate :: Ord a => (b -> c) -> (c -> c -> c) -> (c -> d) -> [(a, b)] -> Map a d
+aggregate intro combine extro l =
+  M.map extro $
+  M.fromListWith combine $
+  map (second intro) l
+  
+createPairs :: (Ord a, Ord b) => b -> Set a -> MultiMap a b
+createPairs b s = MM.fromList $ map (\x -> (x, b)) $ S.toList s
 
-follows :: forall a . Ord a => Grammar a -> Map a (Set a)
-follows g = M.map (setMapMaybe item2Maybe) fixp
+unwrap :: (a -> a -> a) -> (b -> b -> b) -> (a, b) -> [(a, b)] -> (a, b)
+unwrap fa fb
+  = foldr (\(as', bs') (as, bs) -> (fa as' as, fb bs' bs))
+  
+unwrapMonoid :: (Monoid a, Monoid b) => [(a, b)] -> (a, b)
+unwrapMonoid = unwrap mappend mappend (mempty, mempty)
+  
+unwrapLists :: [([a], [b])] -> ([a], [b])
+unwrapLists = unwrap (++) (++) ([], [])
+
+follows :: forall a . (Show a, Ord a) => Grammar a -> MultiMap a a
+follows g = fixp
   where
     nullableSet = nullables g
     firstSets = firsts g
     
-    headsWithNullables :: [a] -> [Maybe a]
-    headsWithNullables [] = [Nothing]
-    headsWithNullables (a : r) = Just a : if a `S.member` nullableSet
-                                            then headsWithNullables r
-                                            else []
-    
-    prodFollows :: a -> Prod a -> [(a, FollowItem a)]
-    prodFollows _ [] = []
-    prodFollows parent (a : r) = 
-      let restFollows = prodFollows parent r
-          prodItems = map (maybe (EndItemParent parent) NextItem) (headsWithNullables r)
-      in map (\x -> (a, x)) prodItems ++ restFollows
-    
-    -- The follows relation which will be iterated with firsts to find a fixed point
-    baseFollows :: Map a (Set (FollowItem a))
-    baseFollows = toElemMap $ M.toList (rules g) >>= (\(parent, lst) -> lst >>= prodFollows parent)
-    
-    baseFollows' = baseFollows `M.union` constMap S.empty (elems g `S.difference` S.fromList (M.keys baseFollows))
-    
-    nextFollows :: Map a (Set (FollowItem a)) -> a -> Set (FollowItem a)
-    nextFollows m k =
-      let currSet = m M.! k
-          sets = map (\x ->
-            case x of
-              EndItemParent p -> m M.! p
-              NextItem k' -> S.map NextItem $ fromMaybe S.empty (M.lookup k' firstSets))
-            (S.toList currSet) 
-      in S.unions sets
+    -- | `adjacentPairs nullables prod -> (adjacent, end)`, where nullables is a set
+    -- nullable elements, prod is a single production, adjacent is an assoc list of
+    -- adjacent elements, and end is a list of elements adjacent to the end.
+    adjacentPairs :: Prod a -> (MultiMap a a, Set a)
+    adjacentPairs = go S.empty MM.empty
+      where
+        go prevAdj inc l = case l of
+          [] -> (inc, prevAdj)
+          a : r -> let
+                      inc' = inc `MM.union` createPairs a prevAdj
+                      prevAdj' = S.singleton a `S.union` if a `S.member` nullableSet then prevAdj else S.empty
+                   in go prevAdj' inc' r
       
-    fixp = fixpointPostMap nextFollows baseFollows'
+    ntermFollows :: [Prod a] -> (MultiMap a a, Set a)
+    ntermFollows ps = unwrapMonoid $ map adjacentPairs ps
     
-    item2Maybe it = case it of
-      EndItemParent _ -> Nothing
-      NextItem a -> Just a
+    (allAdjs, allEnds) = M.foldWithKey
+      (\nt ps (adjs, ends) ->
+         let (adjs', end') = ntermFollows ps
+         in (adjs' `mappend` adjs, createPairs nt end' `mappend` ends))
+      (mempty, mempty)
+      (rules g)
+      
+    base :: MultiMap a a
+    base = MM.mapValues (firstSets MM.!) allAdjs
     
+    nextFollows :: MultiMap a a -> MultiMap a a
+    nextFollows m =
+      m `mappend` MM.mapValues (allEnds MM.!) m
+      
+    fixp = fixpointEq nextFollows base
+
 gram1 :: Grammar String
 gram1 = fromJust $ makeGrammar
     (S.fromList ["a", "b"])

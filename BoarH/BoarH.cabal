@@ -11,5 +11,7 @@ executable BoarH
                    base >= 4,
                    containers >=0.5.0 && <0.6
   ghc-options:     -Wall
-  other-modules:   Grammar
+  other-modules:   
+                   Grammar,
+                   MultiMap
 
