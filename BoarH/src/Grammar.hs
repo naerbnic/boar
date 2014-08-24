@@ -8,7 +8,7 @@ import qualified Data.Set as S
 import MultiMap (MultiMap)
 import qualified MultiMap as MM
 import Data.Maybe (fromJust)
-import Data.Monoid (Monoid(..))
+import Data.Monoid (Monoid(..), (<>))
 
 type Prod = []
 
@@ -20,6 +20,7 @@ data Grammar a = Grammar
   , nullables :: Set a
   , firsts :: MultiMap a a
   , follows :: MultiMap a a
+  
   } deriving (Eq, Show)
   
 isterm :: Ord a => Grammar a -> a -> Bool
@@ -45,6 +46,11 @@ getFirsts g = (firsts g MM.!)
 
 getFollows :: Ord a => Grammar a -> a -> Set a
 getFollows g = (follows g MM.!)
+
+prodList :: Ord a => Grammar a -> [(a, Prod a)]
+prodList g = concatMap
+  (\ (parent, prods) -> map (\ prod -> (parent, prod)) prods)
+  (M.toList (rules g))
   
 -- Small Helpers
 
@@ -114,41 +120,36 @@ unwrap fa fb
   = foldr (\(as', bs') (as, bs) -> (fa as' as, fb bs' bs))
   
 unwrapMonoid :: (Monoid a, Monoid b) => [(a, b)] -> (a, b)
-unwrapMonoid = unwrap mappend mappend (mempty, mempty)
+unwrapMonoid = unwrap (<>) (<>) (mempty, mempty)
 
 createFollows :: forall a . Ord a => Grammar a -> MultiMap a a
-createFollows g = fixpointEq nextFollows base
+createFollows g = fixpointEq iter base
   where
-    -- | `adjacentPairs nullables prod -> (adjacent, end)`, where nullables is a set
-    -- nullable elements, prod is a single production, adjacent is an assoc list of
-    -- adjacent elements, and end is a list of elements adjacent to the end.
-    adjacentPairs :: Prod a -> (MultiMap a a, Set a)
-    adjacentPairs = go S.empty MM.empty
+    adjacentPairs parent = go S.empty MM.empty
       where
         go prevAdj inc l = case l of
-          [] -> (inc, prevAdj)
-          a : r -> let
-                      inc' = inc `MM.union` createPairs a prevAdj
-                      prevAdj' = S.singleton a `S.union` if isNullable g a then prevAdj else S.empty
-                   in go prevAdj' inc' r
-      
-    ntermFollows :: [Prod a] -> (MultiMap a a, Set a)
-    ntermFollows ps = unwrapMonoid $ map adjacentPairs ps
+          [] -> (inc, createPairs parent prevAdj)
+          a : r ->
+            let nextAdj = if isNullable g a
+                  then prevAdj
+                  else S.empty
+                inc' = inc `MM.union` createPairs a prevAdj
+                prevAdj' = S.singleton a `S.union` nextAdj
+            in go prevAdj' inc' r
     
     -- allAdjs: elem -> adjacent elem
     -- allEnds: elem -> nterm which ends with the elem
-    (allAdjs, allEnds) = M.foldWithKey
-      (\nt ps (adjs, ends) ->
-         let (adjs', end') = ntermFollows ps
-         in (adjs' `mappend` adjs, createPairs nt end' `mappend` ends))
-      (mempty, mempty)
-      (rules g)
+    (allAdjs, allEnds) = unwrapMonoid $ map (uncurry adjacentPairs) $ prodList g
       
-    base :: MultiMap a a
-    base = allAdjs `mappend` MM.mapValues (getFirsts g) allAdjs
+    base = allAdjs <> MM.mapValues (getFirsts g) allAdjs
     
-    nextFollows :: MultiMap a a -> MultiMap a a
-    nextFollows m = m `mappend` MM.mapValues (m MM.!) allEnds
+    iter m = m <> MM.mapValues (m MM.!) allEnds
+
+-- Production States
+
+type ProdState a = (a, Prod a)
+
+-- Examples
 
 gram1 :: Grammar String
 gram1 = fromJust $ makeGrammar
