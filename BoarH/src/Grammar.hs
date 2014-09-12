@@ -9,12 +9,14 @@ import MultiMap (MultiMap)
 import qualified MultiMap as MM
 import Data.Maybe (fromJust)
 import Data.Monoid (Monoid(..), (<>))
+import Fixpoint
 
 type Prod = []
+type Rule a = (a, Prod a)
 
 data Grammar a = Grammar
   { terms :: Set a
-  , rules :: Map a [Prod a]
+  , ruleMap :: Map a [Prod a]
   
   -- Calculated lazily from create*
   , nullables :: Set a
@@ -27,7 +29,7 @@ isterm :: Ord a => Grammar a -> a -> Bool
 isterm g = (`S.member` terms g) 
   
 nterms :: Ord a => Grammar a -> Set a
-nterms g = S.fromList (M.keys $ rules g)
+nterms g = S.fromList (M.keys $ ruleMap g)
 
 isnterm :: Ord a => Grammar a -> a -> Bool
 isnterm g = (`S.member` nterms g)
@@ -47,10 +49,13 @@ getFirsts g = (firsts g MM.!)
 getFollows :: Ord a => Grammar a -> a -> Set a
 getFollows g = (follows g MM.!)
 
-prodList :: Ord a => Grammar a -> [(a, Prod a)]
-prodList g = concatMap
+rules :: Ord a => Grammar a -> [Rule a]
+rules g = concatMap
   (\ (parent, prods) -> map (\ prod -> (parent, prod)) prods)
-  (M.toList (rules g))
+  (M.toList (ruleMap g))
+  
+ntermRules :: Ord a => Grammar a -> a -> [Rule a]
+ntermRules g nt = map (\x -> (nt, x)) $ ruleMap g M.! nt
   
 -- Small Helpers
 
@@ -63,7 +68,7 @@ disjoint a b = S.null $ a `S.intersection` b
 -- | Check that a grammar is valid.
 valid :: Ord a => Grammar a -> Bool
 valid g = terms g `disjoint` nterms g &&
-          all (all (all (iselem g))) (M.elems $ rules g)
+          all (all (all (iselem g))) (M.elems $ ruleMap g)
   
 makeGrammar :: Ord a => Set a -> Map a [Prod a] -> Maybe (Grammar a)
 makeGrammar ts rs =
@@ -71,14 +76,6 @@ makeGrammar ts rs =
   in if valid g
      then Just g
      else Nothing
-
-fixpoint :: (a -> Maybe a) -> a -> a
-fixpoint f a = case f a of
-  Nothing -> a
-  Just a' -> fixpoint f a'
-
-fixpointEq :: Eq a => (a -> a) -> a -> a
-fixpointEq f = fixpoint (\x -> let x' = f x in if x == x' then Nothing else Just x')
     
 createNullables :: Ord a => Grammar a -> Set a
 createNullables g = fixpointEq nextNullables S.empty
@@ -89,7 +86,7 @@ createNullables g = fixpointEq nextNullables S.empty
         hasNullableRule = any areNullable
         removeKeys = mapRemoveKeys ns
         
-        nonRules = removeKeys (rules g)
+        nonRules = removeKeys (ruleMap g)
         nullableMap = M.filter hasNullableRule nonRules
         ns' = S.fromList $ M.keys nullableMap
       
@@ -108,19 +105,15 @@ createFirsts g = MM.transitiveClosure allPossibleFirsts
     ntermPossibleFirsts ps = S.unions $ map possibleFirsts ps
     
     termFirsts = MM.fromSet S.singleton (terms g)
-    ntermFirsts = MM.fromSet (\nt -> ntermPossibleFirsts (rules g M.! nt)) (nterms g)
+    ntermFirsts = MM.fromSet (\nt -> ntermPossibleFirsts (ruleMap g M.! nt)) (nterms g)
      
     allPossibleFirsts = termFirsts `MM.union` ntermFirsts
   
 createPairs :: (Ord a, Ord b) => b -> Set a -> MultiMap a b
 createPairs b s = MM.fromList $ map (\x -> (x, b)) $ S.toList s
 
-unwrap :: (a -> a -> a) -> (b -> b -> b) -> (a, b) -> [(a, b)] -> (a, b)
-unwrap fa fb
-  = foldr (\(as', bs') (as, bs) -> (fa as' as, fb bs' bs))
-  
-unwrapMonoid :: (Monoid a, Monoid b) => [(a, b)] -> (a, b)
-unwrapMonoid = unwrap (<>) (<>) (mempty, mempty)
+unwrap :: (Monoid a, Monoid b) => [(a, b)] -> (a, b)
+unwrap = foldr (\(as', bs') (as, bs) -> (as' <> as, bs' <> bs)) (mempty, mempty)
 
 createFollows :: forall a . Ord a => Grammar a -> MultiMap a a
 createFollows g = fixpointEq iter base
@@ -139,16 +132,11 @@ createFollows g = fixpointEq iter base
     
     -- allAdjs: elem -> adjacent elem
     -- allEnds: elem -> nterm which ends with the elem
-    (allAdjs, allEnds) = unwrapMonoid $ map (uncurry adjacentPairs) $ prodList g
+    (allAdjs, allEnds) = unwrap $ map (uncurry adjacentPairs) $ rules g
       
     base = allAdjs <> MM.mapValues (getFirsts g) allAdjs
     
     iter m = m <> MM.mapValues (m MM.!) allEnds
-
--- Production States
-
-type ProdState a = (a, Prod a)
-
 -- Examples
 
 gram1 :: Grammar String

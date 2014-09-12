@@ -13,5 +13,24 @@ executable BoarH
   ghc-options:     -Wall
   other-modules:   
                    Grammar,
-                   MultiMap
+                   MultiMap,
+                   ProdState,
+                   Fixpoint,
+                   Graph
+
+test-suite GraphTest
+  type:            exitcode-stdio-1.0
+  main-is:         TestMain.hs
+  ghc-options:     -Wall -rtsopts
+  build-depends:   
+                   base >= 4, HTF > 0.9,
+                   QuickCheck >=2.6 && <2.7
+  other-modules:   
+                  Graph,
+                  GraphTest,
+                  TestMain,
+                  Test.Graph
+  hs-source-dirs:  
+                  test,
+                  src 
 

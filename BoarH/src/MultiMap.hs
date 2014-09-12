@@ -28,6 +28,7 @@ import Data.Foldable (Foldable)
 import qualified Data.Foldable as F
 import Data.Monoid (Monoid(..))
 import Data.Tuple (swap)
+import Fixpoint
 
 newtype MultiMap a b = MultiMap { toMap :: Map a (Set b) }
   deriving (Eq, Ord)
@@ -100,13 +101,6 @@ invert :: (Ord a, Ord b) => MultiMap a b -> MultiMap b a
 invert = fromList . map swap . toList
 
 -- Fixpoints
-
-fixpointEq :: Eq a => (a -> a) -> a -> a
-fixpointEq f = go
-  where
-    go a = let 
-        a' = f a
-      in if a == a' then a else go a'
 
 transitiveClosure :: (Ord a) => MultiMap a a -> MultiMap a a
 transitiveClosure = fixpointEq iter
