@@ -2,18 +2,52 @@
 {-# LANGUAGE MultiParamTypeClasses #-}
 {-# LANGUAGE TypeFamilies          #-}
 
-module Graph where
+module Graph
+  ( CombineFunc
+  , Graph()
+  , Node(..)
+  , EdgeKey(..)
+  , Edge(..)
+  , empty
+  , create
+  , nodes
+  , edges
+  , nodeKeys
+  , edgeKeys
+  , singleton
+
+  , addNode
+  , addNodes
+  , addEdge
+  , addEdges
+
+  , getNodeData
+
+  , unfold
+
+  , reverse
+
+  ) where
 
 import           Data.Map (Map)
 import qualified Data.Map as M
 import qualified Data.Set as S
 import           Fixpoint
+import           Prelude  hiding (reverse)
 
 -- Helpers
 ----------
 
 isListUnique :: Ord a => [a] -> Bool
 isListUnique l = S.size (S.fromList l) == length l
+
+check :: Bool -> String -> a -> a
+check prop msg a = if prop
+                   then a
+                   else error msg
+
+-- Graph data structures
+------------------------
 
 -- | A function which combines two things of the same type into one. Each
 -- such function @f@ must follow the following laws:
@@ -85,9 +119,11 @@ A call @create nodes edges@ will throw an error if:
 * There is a key in @edges@ that refers to a node key that is not in @nodes@
 -}
 create :: Ord k => [Node k n] -> [Edge k e] -> Graph k n e
-create ns es = if nodesUnique && edgesUnique && edgesAreValid
-    then addEdges const es $ addNodes const ns empty
-    else error "Duplicate nodes/edges"
+create ns es =
+    check nodesUnique "Nodes do not have unique keys" $
+    check edgesUnique "Edges do not have unique keys" $
+    check edgesAreValid "Not all nodes referenced by edges exist" $
+    addEdges const es $ addNodes const ns empty
   where
     nodesUnique = isListUnique $ map nodeKey ns
     edgesUnique = isListUnique $ map edgeKey es
@@ -114,18 +150,43 @@ edges (Graph m) = concatMap createEdges (M.toList m)
 edgeKeys :: Ord k => Graph k n e -> [EdgeKey k]
 edgeKeys = map edgeKey . edges
 
+-- | Returns true if the graph contains a node with the given key
+containsNode :: Ord k => Graph k n e -> k -> Bool
+containsNode (Graph m) k = k `M.member` m
+
 -- | Returns a graph that contains a single node
 singleton :: Ord k => Node k n -> Graph k n e
 singleton n = Graph $ M.singleton (nodeKey n) (NodeImpl (nodeData n) M.empty)
 
+-- | Adds a single edge to the graph. The nodes referenced by the edge's key
+-- must exist in the graph.
+--
+-- If an edge already exists with the given pair, the edge combiner is used to
+-- merge the pair of edge values. The order of this application is undefined.
 addEdge :: Ord k => CombineFunc e -> Edge k e -> Graph k n e -> Graph k n e
-addEdge combineE e (Graph m) = Graph $ M.adjust modifyNode (from $ edgeKey e) m
+addEdge combineE e g@(Graph m) =
+  check (containsNode g f && containsNode g t)
+      "Graph does not contain referenced nodes" $
+  Graph $ M.adjust modifyNode f m
   where
-    modifyNode (NodeImpl n eMap) = NodeImpl n (M.insertWith combineE (to $ edgeKey e) (edgeData e) eMap)
+    f = from (edgeKey e)
+    t = to (edgeKey e)
 
+    modifyNode (NodeImpl n edgeM) =
+        NodeImpl n (M.insertWith combineE t (edgeData e) edgeM)
+
+-- | Adds all of the edges in the given edge list to the graph.
+-- The nodes referenced by the edges' keys must exist in the graph.
+--
+-- If an edge already exists with the given pair, the edge combiner is used to
+-- merge the pair of edge values.
 addEdges :: Ord k => CombineFunc e -> [Edge k e] -> Graph k n e -> Graph k n e
 addEdges combineE edgeList g = foldr (addEdge combineE) g edgeList
 
+-- | Adds a single node to the graph.
+--
+-- If an node already exists with the given pair, the node combiner is used to
+-- merge the pair of node values. The order of this application is undefined.
 addNode :: Ord k => CombineFunc n -> Node k n -> Graph k n e -> Graph k n e
 addNode combineN n (Graph m) =
     Graph $ M.alter alt (nodeKey n) m
@@ -133,35 +194,19 @@ addNode combineN n (Graph m) =
     alt Nothing = Just $ NodeImpl (nodeData n) M.empty
     alt (Just (NodeImpl n' eMap)) = Just $ NodeImpl (combineN (nodeData n) n') eMap
 
+-- | Adds all nodes in the list to the graph.
+--
+-- If an node already exists with the given pair, the node combiner is used to
+-- merge the pair of node values. The order of this application is undefined.
 addNodes :: Ord k => CombineFunc n -> [Node k n] -> Graph k n e -> Graph k n e
 addNodes combineN nodeList g = foldr (addNode combineN) g nodeList
 
-containsNodeKey :: Ord k => Graph k n e -> k -> Bool
-containsNodeKey (Graph m) k = M.member k m
-
+-- | If the node with the given key exists, returns the @Just@ of that value.
+-- Otherwise, it returns nothing.
 getNodeData :: Ord k => Graph k n e -> k -> Maybe n
 getNodeData g k = do
   nimpl <- M.lookup k (getNodeMap g)
   return $ nodeImplData nimpl
-
-mergeNode :: Ord k => CombineFunc n -> CombineFunc e ->
-    NodeImpl k n e -> NodeImpl k n e -> NodeImpl k n e
-mergeNode combineN combineE leftN rightN = NodeImpl
-    { nodeImplData = apply combineN nodeImplData leftN rightN
-    , edgeMap = apply (M.unionWith combineE) edgeMap leftN rightN
-    }
-  where apply binf f a b = binf (f a) (f b)
-
-mergeGraph :: Ord k =>
-    (n -> n -> n) -> (e -> e -> e) -> Graph k n e -> Graph k n e -> Graph k n e
-mergeGraph nMerge eMerge leftG rightG =
-  let apply binf f a b = binf (f a) (f b)
-  in Graph $ apply (M.unionWith (mergeNode nMerge eMerge)) getNodeMap leftG rightG
-
-mergeValues :: Ord b => (a -> b) -> (a -> a -> a) -> [a] -> Map b a
-mergeValues extract combine values = M.fromListWith combine keyValues
-  where
-    keyValues = map (\v -> (extract v, v)) values
 
 extendGraph ::
     Ord k =>
@@ -205,6 +250,7 @@ unfold extract traverse combineN combineE seed =
   where
     dataToNode n = Node (extract n) n
 
+-- | Returns a new graph with all of the edge of this graph reversed.
 reverse :: Ord k => Graph k n e -> Graph k n e
 reverse g = create (nodes g) (map reverseEdge $ edges g)
   where reverseEdge (Edge (EdgeKey f t) e) = Edge (EdgeKey t f) e
