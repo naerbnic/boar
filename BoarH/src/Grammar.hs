@@ -12,7 +12,18 @@ import Data.Monoid (Monoid(..), (<>))
 import Fixpoint
 
 type Prod = []
-type Rule a = (a, Prod a)
+
+-- Rule definition
+--
+
+data Rule a = Rule
+  { lhs :: a
+  , rhs :: Prod a
+  } deriving (Eq, Ord)
+  
+instance Show a => Show (Rule a) where
+  show (Rule l r) = 
+    show l ++ " -> " ++ unwords (map show r) 
 
 data Grammar a = Grammar
   { terms :: Set a
@@ -51,11 +62,11 @@ getFollows g = (follows g MM.!)
 
 rules :: Ord a => Grammar a -> [Rule a]
 rules g = concatMap
-  (\ (parent, prods) -> map (\ prod -> (parent, prod)) prods)
+  (\ (parent, prods) -> map (Rule parent) prods)
   (M.toList (ruleMap g))
   
 ntermRules :: Ord a => Grammar a -> a -> [Rule a]
-ntermRules g nt = map (\x -> (nt, x)) $ ruleMap g M.! nt
+ntermRules g nt = map (Rule nt) $ ruleMap g M.! nt
   
 -- Small Helpers
 
@@ -118,7 +129,7 @@ unwrap = foldr (\(as', bs') (as, bs) -> (as' <> as, bs' <> bs)) (mempty, mempty)
 createFollows :: forall a . Ord a => Grammar a -> MultiMap a a
 createFollows g = fixpointEq iter base
   where
-    adjacentPairs parent = go S.empty MM.empty
+    adjacentPairs (Rule parent p) = go S.empty MM.empty p
       where
         go prevAdj inc l = case l of
           [] -> (inc, createPairs parent prevAdj)
@@ -132,7 +143,7 @@ createFollows g = fixpointEq iter base
     
     -- allAdjs: elem -> adjacent elem
     -- allEnds: elem -> nterm which ends with the elem
-    (allAdjs, allEnds) = unwrap $ map (uncurry adjacentPairs) $ rules g
+    (allAdjs, allEnds) = unwrap $ map adjacentPairs $ rules g
       
     base = allAdjs <> MM.mapValues (getFirsts g) allAdjs
     
@@ -154,3 +165,11 @@ gram2 = fromJust $ makeGrammar
                  ("y", [[], ["b"]]),
                  ("z", [[], ["c"]]),
                  ("s", [["x", "y", "z"]])])
+                 
+gram3 :: Grammar String
+gram3 = fromJust $ makeGrammar
+    (S.fromList ["(", "a", "+", ")"])
+    (M.fromList [("e", [["a"],
+                        ["e", "+", "e"],
+                        ["(", "e", ")"]]),
+                 ("s", [["s"]])])

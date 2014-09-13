@@ -37,7 +37,7 @@ instance (Show n, Show e, Arbitrary n, Arbitrary e) => Arbitrary (Graph Int n e)
 
 
 g1 :: Graph Int () ()
-g1 = G.singleton 0 ()
+g1 = G.singleton (G.Node 0 ())
 
 test_singletonNodes :: IO ()
 test_singletonNodes = assertEqual (G.nodes g1) [G.Node 0 ()]

@@ -1,34 +1,44 @@
 module ProdState where
 
-import Grammar
-import Data.Set (Set)
-import qualified Data.Set as S
-import Fixpoint
-import Data.Map (Map)
-import qualified Data.Map as M
-import Data.Maybe (mapMaybe)
+import           Data.Map   (Map)
+import qualified Data.Map   as M
+import           Data.Maybe (mapMaybe)
+import           Data.Set   (Set)
+import qualified Data.Set   as S
+import           Fixpoint
+import           Grammar
 
+-- | Represents a cursor position within a rule. Classically, this is 
+-- represented with a dot at the appropriate location in a rule.
+--
+-- For example: a -> b . c
+--
 data ProdState a = ProdState (Rule a) Int
-  deriving (Eq, Ord, Show)
-  
+  deriving (Eq, Ord)
+
+instance Show a => Show (ProdState a) where
+  show (ProdState (Rule l r) i) =
+    let (pre, post) = splitAt i r
+    in show l ++ " -> " ++ unwords ( map show pre ++ ["."] ++ map show post )
+
 type State a = Set (ProdState a)
 
 start :: Rule a -> ProdState a
 start r = ProdState r 0
 
-atEnd :: ProdState a -> Bool
-atEnd (ProdState (_, prod) i) = length prod == i
+complete :: ProdState a -> Bool
+complete (ProdState (Rule _ prod) i) = length prod == i
 
 atPoint :: ProdState a -> Maybe a
-atPoint (ProdState (_, prod) i) = index prod i
+atPoint (ProdState (Rule _ prod) i) = index prod i
   where
     index (a:_) 0 = Just a
     index (_:r) idx | idx > 0 = index r (idx - 1)
     index _ _ = Nothing
-    
+
 inc :: ProdState a -> ProdState a
 inc (ProdState r i) = ProdState r (i + 1)
-    
+
 next :: (Eq a) => ProdState a -> a -> Maybe (ProdState a)
 next ps e = if atPoint ps == Just e then Just (inc ps) else Nothing
 
@@ -44,29 +54,28 @@ expandProdState g ps = case atPoint ps of
 
 expandClosure :: Ord a => Grammar a -> State a -> State a
 expandClosure g = fixpointEq iter
-  where iter set = S.unions $ S.toList $ S.map (expandProdState g) set
-  
+  where iter set = S.unions $ set : S.toList (S.map (expandProdState g) set)
+
 stateNexts :: Ord a => State a -> Set a
 stateNexts st = S.fromList $ mapMaybe atPoint (S.toList st)
-  
+
 stateNext :: Ord a => State a -> a -> Maybe (State a)
 stateNext st nt =
   let st' = S.fromList $ mapMaybe (`next` nt) (S.toList st)
   in if S.null st' then Nothing else Just st'
-  
+
 prodStates :: Ord a => Grammar a -> [ProdState a]
 prodStates g = do
-  rule <- rules g
-  let (_, prod) = rule
+  rule@(Rule _ prod) <- rules g
   i <- [0..length prod]
   return $ ProdState rule i
-  
+
 prodStateClosures :: Ord a => Grammar a -> [(ProdState a, State a)]
 prodStateClosures g = do
   prodState <- prodStates g
-  let state = expandProdState g prodState
+  let state = expandClosure g (S.singleton prodState)
   return (prodState, state)
-  
+
 -----------
 
 data ParseMap a = Map (State a) (Map a (State a))
