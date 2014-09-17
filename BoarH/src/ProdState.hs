@@ -8,7 +8,7 @@ import qualified Data.Set   as S
 import           Fixpoint
 import           Grammar    hiding (lhs)
 import qualified Grammar    as G
-import           Graph      (Graph)
+import           Graph      (Graph, Node(..), Edge(..))
 import qualified Graph      as GR
 
 -- | Represents a cursor position within a rule. Classically, this is
@@ -83,8 +83,15 @@ prodStateClosures g = do
   let state = expandClosure g (S.singleton prodState)
   return (prodState, state)
 
-createStates :: Ord a => Grammar a -> a -> Graph (State a) () a
-createStates g = undefined
+createStates :: Ord a => Grammar a -> a -> Graph (State (FullElem a)) () (Maybe a)
+createStates g initial = GR.unfold
+    traverse
+    GR.combineEq
+    GR.combineEq
+    (Node initialState ())
+  where
+    traverse (Node s ()) = undefined
+    initialState = undefined
 
 -----------
 

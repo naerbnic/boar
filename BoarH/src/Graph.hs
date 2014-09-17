@@ -4,6 +4,8 @@
 
 module Graph
   ( CombineFunc
+  , combineEq
+  
   , Graph()
   , Node(..)
   , EdgeKey(..)
@@ -35,6 +37,7 @@ import qualified Data.Map as M
 import qualified Data.Set as S
 import           Fixpoint
 import           Prelude  hiding (reverse)
+import           Control.Arrow ((&&&))
 
 -- Helpers
 ----------
@@ -57,6 +60,9 @@ check prop msg a = if prop
 -- 2. /Associative/: @(a `f` b) `f` c = a `f` (b `f` c)@
 -- 3. /Reflexive-Identity/: @ (a `f` a) = a @
 type CombineFunc a = (a -> a -> a)
+
+combineEq :: (Eq a) => CombineFunc a
+combineEq a b = if a == b then a else error "Values are not equal"
 
 data NodeImpl k n e = NodeImpl
   { nodeImplData :: n
@@ -225,16 +231,15 @@ mergeGraph nMerge eMerge leftG rightG =
 
 extendGraph ::
     Ord k =>
-    (n -> k) -> (n -> [(n, e)]) -> CombineFunc n -> CombineFunc e -> Graph k n e -> Graph k n e
-extendGraph extract traverse combineN combineE g = g''
+    (Node k n -> [(Node k n, e)]) -> CombineFunc n -> CombineFunc e -> Graph k n e -> Graph k n e
+extendGraph traverse combineN combineE g = g''
   where
-    traverseLists = map (\(Node k n) -> (k, traverse n)) $ nodes g
+    traverseLists = map (nodeKey &&& traverse) $ nodes g
 
     newNodes =
-        map (\n -> Node (extract n) n) $
         concatMap (\ (_, v) -> map fst v) traverseLists
 
-    newEdges = concatMap (\ (k, v) -> map (\ (n, e) -> Edge (EdgeKey k (extract n)) e) v)
+    newEdges = concatMap (\ (k, v) -> map (\ (n, e) -> Edge (EdgeKey k (nodeKey n)) e) v)
                    traverseLists
 
     g' = addNodes combineN newNodes g
@@ -253,17 +258,14 @@ extendGraph extract traverse combineN combineE g = g''
 -- A node combiner: Given two node datas with the same key, combine them to
 -- form a new node data. Must be commutitive
 unfold :: (Ord k, Eq n, Eq e)
-  => (n -> k)        -- ^ The extractor
-  -> (n -> [(n, e)]) -- ^ The traverser
-  -> CombineFunc n   -- ^ The node combiner
-  -> CombineFunc e   -- ^ The edge combiner
-  -> n               -- ^ The seed
-  -> Graph k n e     -- ^ The unfolded graph
-unfold extract traverse combineN combineE seed =
-    fixpointEq (extendGraph extract traverse combineN combineE)
-               (singleton (dataToNode seed))
-  where
-    dataToNode n = Node (extract n) n
+  => (Node k n -> [(Node k n, e)]) -- ^ The traverser
+  -> CombineFunc n                 -- ^ The node combiner
+  -> CombineFunc e                 -- ^ The edge combiner
+  -> Node k n                      -- ^ The seed
+  -> Graph k n e                   -- ^ The unfolded graph
+unfold traverse combineN combineE seed =
+    fixpointEq (extendGraph traverse combineN combineE)
+               (singleton seed)
 
 -- | Returns a new graph with all of the edge of this graph reversed.
 reverse :: Ord k => Graph k n e -> Graph k n e

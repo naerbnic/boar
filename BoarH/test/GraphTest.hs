@@ -48,9 +48,6 @@ test_singletonEdges = assertEqual (G.edges g1) []
 prop_reverse :: Graph Int () () -> Bool
 prop_reverse g = G.reverse (G.reverse g) == g
 
-eqCombine :: (Eq a) => G.CombineFunc a
-eqCombine a b = if a == b then a else error "Values are not equal"
-
 generateLoop :: Int -> Graph Int Int ()
 generateLoop n = G.unfold
     id

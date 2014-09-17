@@ -148,6 +148,23 @@ createFollows g = fixpointEq iter base
     base = allAdjs <> MM.mapValues (getFirsts g) allAdjs
     
     iter m = m <> MM.mapValues (m MM.!) allEnds
+    
+data FullElem a
+  = Start
+  | Elem (Maybe a)
+  deriving (Ord, Eq, Show)
+    
+createFullGrammar :: Ord a => Grammar a -> a -> Grammar (FullElem a)
+createFullGrammar g start = let
+    newProd = [Elem $ Just start, Elem Nothing]
+    newTerms = S.map (Elem . Just) (terms g) `S.union` S.singleton (Elem Nothing)
+    newRules =
+      M.mapKeys (Elem . Just) $
+      M.map (map $ map (Elem . Just)) $
+      ruleMap g
+    
+    in fromJust $ makeGrammar newTerms (newRules `M.union` M.singleton Start [newProd])
+
 -- Examples
 
 gram1 :: Grammar String
