@@ -6,9 +6,12 @@ import           Data.Maybe (mapMaybe)
 import           Data.Set   (Set)
 import qualified Data.Set   as S
 import           Fixpoint
-import           Grammar
+import           Grammar    hiding (lhs)
+import qualified Grammar    as G
+import           Graph      (Graph)
+import qualified Graph      as GR
 
--- | Represents a cursor position within a rule. Classically, this is 
+-- | Represents a cursor position within a rule. Classically, this is
 -- represented with a dot at the appropriate location in a rule.
 --
 -- For example: a -> b . c
@@ -22,6 +25,9 @@ instance Show a => Show (ProdState a) where
     in show l ++ " -> " ++ unwords ( map show pre ++ ["."] ++ map show post )
 
 type State a = Set (ProdState a)
+
+lhs :: ProdState a -> a
+lhs (ProdState r _) = G.lhs r
 
 start :: Rule a -> ProdState a
 start r = ProdState r 0
@@ -55,6 +61,7 @@ expandProdState g ps = case atPoint ps of
 expandClosure :: Ord a => Grammar a -> State a -> State a
 expandClosure g = fixpointEq iter
   where iter set = S.unions $ set : S.toList (S.map (expandProdState g) set)
+  
 
 stateNexts :: Ord a => State a -> Set a
 stateNexts st = S.fromList $ mapMaybe atPoint (S.toList st)
@@ -75,6 +82,9 @@ prodStateClosures g = do
   prodState <- prodStates g
   let state = expandClosure g (S.singleton prodState)
   return (prodState, state)
+
+createStates :: Ord a => Grammar a -> a -> Graph (State a) () a
+createStates g = undefined
 
 -----------
 

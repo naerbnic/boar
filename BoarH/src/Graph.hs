@@ -23,6 +23,7 @@ module Graph
 
   , getNodeData
 
+  , mergeGraph
   , unfold
 
   , reverse
@@ -207,6 +208,20 @@ getNodeData :: Ord k => Graph k n e -> k -> Maybe n
 getNodeData g k = do
   nimpl <- M.lookup k (getNodeMap g)
   return $ nodeImplData nimpl
+
+mergeNode :: Ord k => CombineFunc n -> CombineFunc e ->
+    NodeImpl k n e -> NodeImpl k n e -> NodeImpl k n e
+mergeNode combineN combineE leftN rightN = NodeImpl
+    { nodeImplData = apply combineN nodeImplData leftN rightN
+    , edgeMap = apply (M.unionWith combineE) edgeMap leftN rightN
+    }
+  where apply binf f a b = binf (f a) (f b)
+
+mergeGraph :: Ord k =>
+    (n -> n -> n) -> (e -> e -> e) -> Graph k n e -> Graph k n e -> Graph k n e
+mergeGraph nMerge eMerge leftG rightG =
+  let apply binf f a b = binf (f a) (f b)
+  in Graph $ apply (M.unionWith (mergeNode nMerge eMerge)) getNodeMap leftG rightG
 
 extendGraph ::
     Ord k =>

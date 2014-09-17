@@ -30,6 +30,8 @@ import Data.Monoid (Monoid(..))
 import Data.Tuple (swap)
 import Fixpoint
 
+-- | A structure that maps each value in the domain to zero or more values in
+-- the range.
 newtype MultiMap a b = MultiMap { toMap :: Map a (Set b) }
   deriving (Eq, Ord)
   
