@@ -28,6 +28,7 @@ instance Show a => Show (Rule a) where
 data Grammar a = Grammar
   { terms :: Set a
   , ruleMap :: Map a [Prod a]
+  , start :: a
   
   -- Calculated lazily from create*
   , nullables :: Set a
@@ -81,9 +82,9 @@ valid :: Ord a => Grammar a -> Bool
 valid g = terms g `disjoint` nterms g &&
           all (all (all (iselem g))) (M.elems $ ruleMap g)
   
-makeGrammar :: Ord a => Set a -> Map a [Prod a] -> Maybe (Grammar a)
-makeGrammar ts rs =
-  let g = Grammar ts rs (createNullables g) (createFirsts g) (createFollows g)
+makeGrammar :: Ord a => Set a -> Map a [Prod a] -> a -> Maybe (Grammar a)
+makeGrammar ts rs st =
+  let g = Grammar ts rs st (createNullables g) (createFirsts g) (createFollows g)
   in if valid g
      then Just g
      else Nothing
@@ -152,18 +153,26 @@ createFollows g = fixpointEq iter base
 data FullElem a
   = Start
   | Elem (Maybe a)
-  deriving (Ord, Eq, Show)
+  deriving (Ord, Eq)
+  
+instance Show a => Show (FullElem a) where
+  show Start = "START"
+  show (Elem (Just a)) = show a
+  show (Elem Nothing) = "$" 
     
-createFullGrammar :: Ord a => Grammar a -> a -> Grammar (FullElem a)
-createFullGrammar g start = let
-    newProd = [Elem $ Just start, Elem Nothing]
+createFullGrammar :: Ord a => Grammar a -> Grammar (FullElem a)
+createFullGrammar g = let
+    newProd = [Elem $ Just (start g), Elem Nothing]
     newTerms = S.map (Elem . Just) (terms g) `S.union` S.singleton (Elem Nothing)
     newRules =
       M.mapKeys (Elem . Just) $
       M.map (map $ map (Elem . Just)) $
       ruleMap g
     
-    in fromJust $ makeGrammar newTerms (newRules `M.union` M.singleton Start [newProd])
+    in fromJust $ makeGrammar
+      newTerms
+      (newRules `M.union` M.singleton Start [newProd])
+      Start
 
 -- Examples
 
@@ -174,6 +183,7 @@ gram1 = fromJust $ makeGrammar
                         ["e", "a", "e", "b"],
                         ["b", "e", "a"]]),
                  ("s", [["e"]])])
+    "s"
                  
 gram2 :: Grammar String
 gram2 = fromJust $ makeGrammar
@@ -182,6 +192,7 @@ gram2 = fromJust $ makeGrammar
                  ("y", [[], ["b"]]),
                  ("z", [[], ["c"]]),
                  ("s", [["x", "y", "z"]])])
+    "s"
                  
 gram3 :: Grammar String
 gram3 = fromJust $ makeGrammar
@@ -190,3 +201,4 @@ gram3 = fromJust $ makeGrammar
                         ["e", "+", "e"],
                         ["(", "e", ")"]]),
                  ("s", [["s"]])])
+    "s"

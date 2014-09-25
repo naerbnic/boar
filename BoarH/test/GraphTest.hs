@@ -48,18 +48,17 @@ test_singletonEdges = assertEqual (G.edges g1) []
 prop_reverse :: Graph Int () () -> Bool
 prop_reverse g = G.reverse (G.reverse g) == g
 
-generateLoop :: Int -> Graph Int Int ()
+generateLoop :: Int -> Graph Int () ()
 generateLoop n = G.unfold
-    id
     traverse
-    eqCombine
-    eqCombine
-    0
+    G.combineEq
+    G.combineEq
+    (G.Node 0 ())
   where
-    traverse i =
+    traverse (G.Node i ()) =
       if i + 1 == n
-        then [(0, ())]
-        else [(i + 1, ())]
+        then [(G.Node 0 (), ())]
+        else [(G.Node (i + 1) (), ())]
 
 test_generatesCorrectly :: IO ()
 test_generatesCorrectly =

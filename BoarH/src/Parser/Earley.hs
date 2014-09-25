@@ -32,7 +32,7 @@ type EarleyStateSequence a = Seq (EarleyState a)
 
 next :: Ord a => a -> ParseItem a -> Maybe (ParseItem a)
 next a it = do
-  nextState <- PS.next (prodState it) a
+  nextState <- PS.next a (prodState it) 
   return it { prodState = nextState }
 
 reduce :: Ord a => Int -> ParseItem a -> EarleyStateSequence a -> EarleyStateSequence a
