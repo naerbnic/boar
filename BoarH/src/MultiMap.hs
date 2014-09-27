@@ -15,6 +15,7 @@ module MultiMap
   , toList
   , (!)
   , invert
+  , groupValues
   
   , transitiveClosure
   ) where
@@ -101,6 +102,11 @@ fromSet f = MultiMap . M.fromList . filter (\(_, y) -> not $ S.null y) . map (\x
 
 invert :: (Ord a, Ord b) => MultiMap a b -> MultiMap b a
 invert = fromList . map swap . toList
+
+groupValues :: (Ord a, Ord b) => (b -> a) -> Set b -> MultiMap a b
+groupValues f s = fromList $
+  map (\x -> (f x, x)) $
+  S.toList s
 
 -- Fixpoints
 

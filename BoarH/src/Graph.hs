@@ -223,6 +223,7 @@ mergeNode combineN combineE leftN rightN = NodeImpl
     }
   where apply binf f a b = binf (f a) (f b)
 
+-- | Merges two graphs pairwise. If both share the same node value and the
 mergeGraph :: Ord k =>
     (n -> n -> n) -> (e -> e -> e) -> Graph k n e -> Graph k n e -> Graph k n e
 mergeGraph nMerge eMerge leftG rightG =
