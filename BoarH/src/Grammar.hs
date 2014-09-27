@@ -1,15 +1,16 @@
-{-# LANGUAGE RankNTypes, ScopedTypeVariables #-}
+{-# LANGUAGE RankNTypes          #-}
+{-# LANGUAGE ScopedTypeVariables #-}
 module Grammar where
 
-import Data.Map (Map)
-import qualified Data.Map as M
-import Data.Set (Set)
-import qualified Data.Set as S
-import MultiMap (MultiMap)
-import qualified MultiMap as MM
-import Data.Maybe (fromJust)
-import Data.Monoid (Monoid(..), (<>))
-import Fixpoint
+import           Data.Map    (Map)
+import qualified Data.Map    as M
+import           Data.Maybe  (fromJust)
+import           Data.Monoid (Monoid (..), (<>))
+import           Data.Set    (Set)
+import qualified Data.Set    as S
+import           Fixpoint
+import           MultiMap    (MultiMap)
+import qualified MultiMap    as MM
 
 type Prod = []
 
@@ -20,26 +21,26 @@ data Rule a = Rule
   { lhs :: a
   , rhs :: Prod a
   } deriving (Eq, Ord)
-  
+
 instance Show a => Show (Rule a) where
-  show (Rule l r) = 
-    show l ++ " -> " ++ unwords (map show r) 
+  show (Rule l r) =
+    show l ++ " -> " ++ unwords (map show r)
 
 data Grammar a = Grammar
-  { terms :: Set a
-  , ruleMap :: Map a [Prod a]
-  , start :: a
-  
+  { terms     :: Set a
+  , ruleMap   :: Map a [Prod a]
+  , start     :: a
+
   -- Calculated lazily from create*
   , nullables :: Set a
-  , firsts :: MultiMap a a
-  , follows :: MultiMap a a
-  
+  , firsts    :: MultiMap a a
+  , follows   :: MultiMap a a
+
   } deriving (Eq, Show)
-  
+
 isterm :: Ord a => Grammar a -> a -> Bool
-isterm g = (`S.member` terms g) 
-  
+isterm g = (`S.member` terms g)
+
 nterms :: Ord a => Grammar a -> Set a
 nterms g = S.fromList (M.keys $ ruleMap g)
 
@@ -65,10 +66,10 @@ rules :: Ord a => Grammar a -> [Rule a]
 rules g = concatMap
   (\ (parent, prods) -> map (Rule parent) prods)
   (M.toList (ruleMap g))
-  
+
 ntermRules :: Ord a => Grammar a -> a -> [Rule a]
 ntermRules g nt = map (Rule nt) $ ruleMap g M.! nt
-  
+
 -- Small Helpers
 
 mapRemoveKeys :: Ord a => Set a -> Map a v -> Map a v
@@ -81,14 +82,14 @@ disjoint a b = S.null $ a `S.intersection` b
 valid :: Ord a => Grammar a -> Bool
 valid g = terms g `disjoint` nterms g &&
           all (all (all (iselem g))) (M.elems $ ruleMap g)
-  
+
 makeGrammar :: Ord a => Set a -> Map a [Prod a] -> a -> Maybe (Grammar a)
 makeGrammar ts rs st =
   let g = Grammar ts rs st (createNullables g) (createFirsts g) (createFollows g)
   in if valid g
      then Just g
      else Nothing
-    
+
 createNullables :: Ord a => Grammar a -> Set a
 createNullables g = fixpointEq nextNullables S.empty
   where
@@ -97,30 +98,30 @@ createNullables g = fixpointEq nextNullables S.empty
         areNullable = all (`S.member` ns)
         hasNullableRule = any areNullable
         removeKeys = mapRemoveKeys ns
-        
+
         nonRules = removeKeys (ruleMap g)
         nullableMap = M.filter hasNullableRule nonRules
         ns' = S.fromList $ M.keys nullableMap
-      
-      
+
+
 createFirsts :: forall a . Ord a => Grammar a -> MultiMap a a
 createFirsts g = MM.transitiveClosure allPossibleFirsts
   where
     nullableSet = nullables g
-    
+
     possibleFirsts :: Prod a -> Set a
     possibleFirsts [] = S.empty
     possibleFirsts (a:r) =
       S.singleton a `S.union`
         if a `S.member` nullableSet then possibleFirsts r else S.empty
-        
+
     ntermPossibleFirsts ps = S.unions $ map possibleFirsts ps
-    
+
     termFirsts = MM.fromSet S.singleton (terms g)
     ntermFirsts = MM.fromSet (\nt -> ntermPossibleFirsts (ruleMap g M.! nt)) (nterms g)
-     
+
     allPossibleFirsts = termFirsts `MM.union` ntermFirsts
-  
+
 createPairs :: (Ord a, Ord b) => b -> Set a -> MultiMap a b
 createPairs b s = MM.fromList $ map (\x -> (x, b)) $ S.toList s
 
@@ -141,25 +142,25 @@ createFollows g = fixpointEq iter base
                 inc' = inc `MM.union` createPairs a prevAdj
                 prevAdj' = S.singleton a `S.union` nextAdj
             in go prevAdj' inc' r
-    
+
     -- allAdjs: elem -> adjacent elem
     -- allEnds: elem -> nterm which ends with the elem
     (allAdjs, allEnds) = unwrap $ map adjacentPairs $ rules g
-      
+
     base = allAdjs <> MM.mapValues (getFirsts g) allAdjs
-    
+
     iter m = m <> MM.mapValues (m MM.!) allEnds
-    
+
 data FullElem a
   = Start
   | Elem (Maybe a)
   deriving (Ord, Eq)
-  
+
 instance Show a => Show (FullElem a) where
   show Start = "START"
   show (Elem (Just a)) = show a
-  show (Elem Nothing) = "$" 
-    
+  show (Elem Nothing) = "$"
+
 createFullGrammar :: Ord a => Grammar a -> Grammar (FullElem a)
 createFullGrammar g = let
     newProd = [Elem $ Just (start g), Elem Nothing]
@@ -168,7 +169,7 @@ createFullGrammar g = let
       M.mapKeys (Elem . Just) $
       M.map (map $ map (Elem . Just)) $
       ruleMap g
-    
+
     in fromJust $ makeGrammar
       newTerms
       (newRules `M.union` M.singleton Start [newProd])
@@ -179,12 +180,12 @@ createFullGrammar g = let
 gram1 :: Grammar String
 gram1 = fromJust $ makeGrammar
     (S.fromList ["a", "b"])
-    (M.fromList [("e", [[], 
+    (M.fromList [("e", [[],
                         ["e", "a", "e", "b"],
                         ["b", "e", "a"]]),
                  ("s", [["e"]])])
     "s"
-                 
+
 gram2 :: Grammar String
 gram2 = fromJust $ makeGrammar
     (S.fromList ["a", "b", "c"])
@@ -193,7 +194,7 @@ gram2 = fromJust $ makeGrammar
                  ("z", [[], ["c"]]),
                  ("s", [["x", "y", "z"]])])
     "s"
-                 
+
 gram3 :: Grammar String
 gram3 = fromJust $ makeGrammar
     (S.fromList ["(", "a", "+", ")"])

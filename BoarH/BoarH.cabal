@@ -31,7 +31,6 @@ test-suite GraphTest
                   Graph,
                   GraphTest,
                   TestMain,
-                  Test.Graph,
                   Parser.Earley,
                   ParseState
   hs-source-dirs:  

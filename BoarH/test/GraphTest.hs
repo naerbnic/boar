@@ -2,13 +2,10 @@
 {-# LANGUAGE FlexibleInstances #-}
 module GraphTest (htf_thisModulesTests) where
 
-import Test.Framework
-import Test.QuickCheck
-import           Graph (Graph, Node, Edge)
-import qualified Graph as G
-import Control.Monad (replicateM)
-import qualified Data.Map as M
-import Debug.Trace
+import qualified Data.Map        as M
+import           Graph           (Graph)
+import qualified Graph           as G
+import           Test.Framework
 
 uniqueVectorOf :: (Show b, Ord a) => (b -> a) -> Int -> Gen b -> Gen [b]
 uniqueVectorOf f n gb = go M.empty n
@@ -26,7 +23,7 @@ instance (Show n, Show e, Arbitrary n, Arbitrary e) => Arbitrary (Graph Int n e)
   arbitrary = sized $ \size -> do
     let keys = [1..size]
     ns <- vectorOf size arbitrary
-      
+
     eSize <- choose (0 :: Int, size)
     es <- uniqueVectorOf G.edgeKey eSize $ do
       from <- elements keys

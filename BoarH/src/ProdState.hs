@@ -1,13 +1,9 @@
 module ProdState where
 
-import           Data.Maybe (mapMaybe, fromJust)
-import           Data.Set   (Set)
-import qualified Data.Set   as S
-import           Fixpoint
-import           Grammar    hiding (lhs, start)
-import qualified Grammar    as G
-import           Graph      (Graph, Node(..))
-import qualified Graph      as GR
+import           Data.Set (Set)
+import qualified Data.Set as S
+import           Grammar
+import qualified Grammar  as G
 
 -- Helpers
 -----------
@@ -63,6 +59,6 @@ inc ps@(ProdState r i) = if complete ps
 
 -- | @next a ps@ returns the 'Just' of the production state obtained by
 -- incrementing the dot forward one element if @a@ was just after the dot, or
--- 'Nothing' if it the element was different, or incomplete. 
+-- 'Nothing' if it the element was different, or incomplete.
 next :: (Eq a) => a -> ProdState a -> Maybe (ProdState a)
 next e ps = if atPoint ps == Just e then inc ps else Nothing

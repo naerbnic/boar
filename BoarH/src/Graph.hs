@@ -5,7 +5,7 @@
 module Graph
   ( CombineFunc
   , combineEq
-  
+
   , Graph()
   , Node(..)
   , EdgeKey(..)
@@ -32,12 +32,12 @@ module Graph
 
   ) where
 
-import           Data.Map (Map)
-import qualified Data.Map as M
-import qualified Data.Set as S
-import           Fixpoint
-import           Prelude  hiding (reverse)
 import           Control.Arrow ((&&&))
+import           Data.Map      (Map)
+import qualified Data.Map      as M
+import qualified Data.Set      as S
+import           Fixpoint
+import           Prelude       hiding (reverse)
 
 -- Helpers
 ----------

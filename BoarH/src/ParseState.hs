@@ -1,19 +1,17 @@
 module ParseState where
 
-import Data.Set (Set)
-import qualified Data.Set as S
-import Grammar hiding (lhs, start)
-import qualified Grammar as G
-import ProdState
-import Fixpoint
-import Graph (Graph, Node(..))
-import qualified Graph as GR
-import Data.Maybe (mapMaybe, fromJust)
+import           Data.Maybe (fromJust, mapMaybe)
+import           Data.Set   (Set)
+import qualified Data.Set   as S
+import           Fixpoint
+import           Grammar    hiding (lhs, start)
+import qualified Grammar    as G
+import           Graph      (Graph, Node (..))
+import qualified Graph      as GR
+import           ProdState
 
 -- | A parse state defined as a collection of production states.
 type State a = Set (ProdState a)
-
-
 
 nextElemsInState :: Ord a => State a -> Set a
 nextElemsInState st = S.fromList $ mapMaybe atPoint $ S.toList st
@@ -33,7 +31,7 @@ expandNTerm :: Ord a => Grammar a -> a -> State a
 expandNTerm g nt = S.fromList $ do
   rule <- ntermRules g nt
   return $ start rule
-  
+
 initialState :: Ord a => Grammar a -> State a
 initialState g = expandClosure g (expandNTerm g (G.start g))
 
@@ -41,7 +39,7 @@ expandProdStateNT :: Ord a => Grammar a -> ProdState a -> State a
 expandProdStateNT g ps = case atPoint ps of
   Just nt | isnterm g nt -> expandNTerm g nt
   _ -> S.empty
-  
+
 expandProdStateNullable :: Ord a => Grammar a -> ProdState a -> State a
 expandProdStateNullable g ps = maybeToSet $ do
   pt <- atPoint ps
@@ -50,7 +48,7 @@ expandProdStateNullable g ps = maybeToSet $ do
     else Nothing
 
 expandClosure :: Ord a => Grammar a -> State a -> State a
-expandClosure g = fixpointSet 
+expandClosure g = fixpointSet
   (mergeSetFunctions [expandProdStateNT g, expandProdStateNullable g])
 
 stateNext :: Ord a => State a -> a -> Maybe (State a)
@@ -80,8 +78,8 @@ createLR0States g = GR.unfold
     fullGrammar = createFullGrammar g
     traverse (Node s ()) = let
       nexts = stateNexts s
-      
+
       pairToEdge (s', Elem a) = (Node s' (), a)
       pairToEdge (_, Start) = error "Unexpected start symbol in rule"
-      
+
       in map pairToEdge nexts
