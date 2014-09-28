@@ -18,7 +18,8 @@ executable BoarH
                    Fixpoint,
                    Graph,
                    Parser.Earley,
-                   ParseState
+                   ParseState,
+                   Generate.EarleyStates
 
 test-suite GraphTest
   type:            exitcode-stdio-1.0
@@ -32,7 +33,8 @@ test-suite GraphTest
                   GraphTest,
                   TestMain,
                   Parser.Earley,
-                  ParseState
+                  ParseState,
+                  Generate.EarleyStates
   hs-source-dirs:  
                   test,
                   src 

@@ -10,8 +10,9 @@ module MultiMap
   , union
   , unions
   , member
+  , from
   , fromList
-  , fromSet
+  , fromKeySet
   , toList
   , (!)
   , invert
@@ -45,7 +46,7 @@ instance (Ord k, Ord v) => Monoid (MultiMap k v) where
 
 -- Utilities
 
-mapSet :: (Ord a, Ord b) => (a -> Set b) -> Set a -> Set b
+mapSet :: (Ord b) => (a -> Set b) -> Set a -> Set b
 mapSet f as = S.unions $ map f (S.toList as)
 
 foldableToSet :: (Ord a, Foldable t) => t a -> Set a
@@ -97,8 +98,11 @@ fromList l = MultiMap $ M.fromListWith S.union (map (second S.singleton) l)
 toList :: (Ord a, Ord b) => MultiMap a b -> [(a, b)]
 toList (MultiMap m) = M.foldWithKey (\a bs elems -> keyValueToAssoc a bs ++ elems) [] m
 
-fromSet :: (Ord a, Ord b) => (a -> Set b) -> Set a -> MultiMap a b
-fromSet f = MultiMap . M.fromList . filter (\(_, y) -> not $ S.null y) . map (\x -> (x, f x)) . S.toList
+from :: (Ord a, Ord b, Foldable t) => t (a, b) -> MultiMap a b
+from fld = fromList $ F.toList fld
+
+fromKeySet :: (Ord a, Ord b) => (a -> Set b) -> Set a -> MultiMap a b
+fromKeySet f = MultiMap . M.fromList . filter (\(_, y) -> not $ S.null y) . map (\x -> (x, f x)) . S.toList
 
 invert :: (Ord a, Ord b) => MultiMap a b -> MultiMap b a
 invert = fromList . map swap . toList

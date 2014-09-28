@@ -2,6 +2,7 @@ module Fixpoint where
 
 import           Data.Set (Set)
 import qualified Data.Set as S
+import Data.Foldable (foldMap)
 
 fixpointEq :: Eq a => (a -> a) -> a -> a
 fixpointEq f = go
@@ -24,8 +25,9 @@ fixpointSet f s = let
   go seen work = if S.null work
     then seen
     else let
-      nextSet = S.unions $ map f (S.toList work)
-      in go (seen `S.union` nextSet) (nextSet `S.difference` seen)
+      nextSet = foldMap f work
+      in go (nextSet `S.union` seen)
+            (nextSet `S.difference` seen)
   in go s s
 
 mergeSetFunctions :: Ord a => [a -> Set a] -> a -> Set a

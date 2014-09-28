@@ -117,8 +117,8 @@ createFirsts g = MM.transitiveClosure allPossibleFirsts
 
     ntermPossibleFirsts ps = S.unions $ map possibleFirsts ps
 
-    termFirsts = MM.fromSet S.singleton (terms g)
-    ntermFirsts = MM.fromSet (\nt -> ntermPossibleFirsts (ruleMap g M.! nt)) (nterms g)
+    termFirsts = MM.fromKeySet S.singleton (terms g)
+    ntermFirsts = MM.fromKeySet (\nt -> ntermPossibleFirsts (ruleMap g M.! nt)) (nterms g)
 
     allPossibleFirsts = termFirsts `MM.union` ntermFirsts
 

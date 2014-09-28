@@ -1,6 +1,14 @@
-module ParseState where
+module ParseState
+  ( State
+  , stateNexts
+  , expandProdStateNullable
+  , expandProdStateNT
+  , expandClosure
+  , initialState
+  , createLR0States
+  ) where
 
-import           Data.Maybe (fromJust, mapMaybe)
+import           Data.Maybe (catMaybes)
 import           Data.Set   (Set)
 import qualified Data.Set   as S
 import           Fixpoint
@@ -8,24 +16,27 @@ import           Grammar    hiding (lhs, start)
 import qualified Grammar    as G
 import           Graph      (Graph, Node (..))
 import qualified Graph      as GR
+import qualified MultiMap as MM
+import qualified Data.Map as M
 import           ProdState
+import Data.Tuple (swap)
+
+-- Helpers
+
+catMaybeSet :: Ord a => Set (Maybe a) -> Set a
+catMaybeSet = S.fromList . catMaybes . S.toList
+
+mapMaybeSet :: Ord b => (a -> Maybe b) -> Set a -> Set b
+mapMaybeSet f s = catMaybeSet $ S.map f s
+
+mapFst :: (a -> b) -> (a, c) -> (b, c)
+mapFst f (a, b) = (f a, b)
 
 -- | A parse state defined as a collection of production states.
 type State a = Set (ProdState a)
 
-nextElemsInState :: Ord a => State a -> Set a
-nextElemsInState st = S.fromList $ mapMaybe atPoint $ S.toList st
-
-nextStateForElem :: Ord a => a -> State a -> Maybe (State a)
-nextStateForElem el st = let
-  prodSet = S.fromList $ mapMaybe (next el) $ S.toList st
-  in if S.null prodSet
-     then Nothing
-     else Just prodSet
-
 stateNexts :: Ord a => State a -> [(State a, a)]
-stateNexts st = map (\x -> (fromJust $ nextStateForElem x st, x))
-                    (S.toList $ nextElemsInState st)
+stateNexts st = map swap $ M.toList $ MM.toMap $ MM.from $ mapMaybeSet step st
 
 expandNTerm :: Ord a => Grammar a -> a -> State a
 expandNTerm g nt = S.fromList $ do
@@ -51,23 +62,6 @@ expandClosure :: Ord a => Grammar a -> State a -> State a
 expandClosure g = fixpointSet
   (mergeSetFunctions [expandProdStateNT g, expandProdStateNullable g])
 
-stateNext :: Ord a => State a -> a -> Maybe (State a)
-stateNext st nt =
-  let st' = S.fromList $ mapMaybe (next nt) (S.toList st)
-  in if S.null st' then Nothing else Just st'
-
-prodStates :: Ord a => Grammar a -> [ProdState a]
-prodStates g = do
-  rule@(Rule _ prod) <- rules g
-  i <- [0..length prod]
-  return $ ProdState rule i
-
-prodStateClosures :: Ord a => Grammar a -> [(ProdState a, State a)]
-prodStateClosures g = do
-  prodState <- prodStates g
-  let state = expandClosure g (S.singleton prodState)
-  return (prodState, state)
-
 createLR0States :: Ord a => Grammar a -> Graph (State (FullElem a)) () (Maybe a)
 createLR0States g = GR.unfold
     traverse
@@ -77,7 +71,7 @@ createLR0States g = GR.unfold
   where
     fullGrammar = createFullGrammar g
     traverse (Node s ()) = let
-      nexts = stateNexts s
+      nexts = map (mapFst (expandClosure fullGrammar)) $ stateNexts s
 
       pairToEdge (s', Elem a) = (Node s' (), a)
       pairToEdge (_, Start) = error "Unexpected start symbol in rule"
