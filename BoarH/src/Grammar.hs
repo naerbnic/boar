@@ -70,6 +70,9 @@ rules g = concatMap
 ntermRules :: Ord a => Grammar a -> a -> [Rule a]
 ntermRules g nt = map (Rule nt) $ ruleMap g M.! nt
 
+ruleNullable :: Ord a => Grammar a -> Rule a -> Bool
+ruleNullable g r = all (`S.member` nullables g) (rhs r)
+
 -- Small Helpers
 
 mapRemoveKeys :: Ord a => Set a -> Map a v -> Map a v
@@ -179,10 +182,10 @@ createFullGrammar g = let
 
 gram1 :: Grammar String
 gram1 = fromJust $ makeGrammar
-    (S.fromList ["a", "b"])
+    (S.fromList ["A", "B"])
     (M.fromList [("e", [[],
-                        ["e", "a", "e", "b"],
-                        ["b", "e", "a"]]),
+                        ["e", "A", "e", "B"],
+                        ["B", "e", "A"]]),
                  ("s", [["e"]])])
     "s"
 

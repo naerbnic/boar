@@ -16,6 +16,9 @@ import Data.Tuple (swap)
 setToMap :: Ord a => (a -> b) -> Set a -> Map a b
 setToMap f s = M.fromList $ map (\x -> (x, f x)) $ S.toList s
 
+combiner :: (b -> c -> d) -> (a -> b) -> (a -> c) -> a -> d
+combiner c f1 f2 x = c (f1 x) (f2 x)
+
 {-|
 When we transition from an Earley state (st, i), the current Earley set will
 end up holding (incState st, i) and (freshState, j), where j is the origin of
@@ -75,18 +78,18 @@ nextToResultStates g st = let
                   (if S.null freshSet then Nothing else Just freshSet)
 
 -- | Creates the Earley info for a parse state
-stateEarleyInfo :: Ord a => Grammar a -> State a -> EarleyInfo a
-stateEarleyInfo g st = let
+stateTransitions :: Ord a => Grammar a -> State a -> Map a (ResultStates a)
+stateTransitions g st = let
   nexts = stateNexts st
-  completeSet = S.map PS.lhs $ S.filter PS.complete st
+  in M.map (nextToResultStates g) $ M.fromList (map swap nexts)
   
-  transitionMap = M.map (nextToResultStates g) $ M.fromList (map swap nexts)
-  in EarleyInfo completeSet transitionMap
+incStates :: Ord a => Map (State a) (Map a (ResultStates a)) -> Set (State a)
+incStates trans = S.fromList $ map incState $ concatMap M.elems (M.elems trans)
   
 -- | Returns all parse states inside the Earley info.
-infoStates :: Ord a => EarleyInfo a -> Set (State a)
-infoStates ei = let
-  results = M.elems (transitions ei)
+transStates :: Ord a => Map a (ResultStates a) -> Set (State a)
+transStates m = let
+  results = M.elems m
   
   resultStates (ResultStates i f) = S.singleton i `S.union` case f of
     Nothing -> S.empty
@@ -96,10 +99,17 @@ infoStates ei = let
 earleyStates :: Ord a => Grammar a -> Set (State a)
 earleyStates g = let
   expandedInitialState = expandClosure g (initialState g)
-  in fixpointSet (infoStates . stateEarleyInfo g)
+  in fixpointSet (transStates . stateTransitions g)
                  (S.singleton expandedInitialState)
                  
 earleyStateCollection :: Ord a => Grammar a -> StateCollection a
 earleyStateCollection g = let
-  statesMap = setToMap (stateEarleyInfo g) (earleyStates g)
+  stateTransitionsMap = setToMap (stateTransitions g) (earleyStates g)
+  incStatesSet = incStates stateTransitionsMap
+  
+  statesMap = M.mapWithKey (\k v -> let
+    completeSet = if k `S.member` incStatesSet
+      then S.map PS.lhs $ S.filter PS.complete k
+      else S.empty
+    in EarleyInfo completeSet v) stateTransitionsMap
   in StateCollection (initialState g) statesMap

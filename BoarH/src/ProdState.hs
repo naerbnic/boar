@@ -49,7 +49,7 @@ step (ProdState r@(Rule _ prod) i) = do
 --
 -- For example: @a -> b c .@ and @a -> .@ would both return true.
 complete :: ProdState a -> Bool
-complete ps = isJust (step ps)
+complete ps = not (isJust (step ps))
 
 -- | Returns the 'Just' of the element just after the dot in a production state,
 -- or 'Nothing' if the production state is complete.
