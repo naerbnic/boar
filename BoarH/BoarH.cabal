@@ -9,7 +9,8 @@ executable BoarH
   main-is:         Main.hs
   build-depends:   
                    base >= 4,
-                   containers >=0.5.0 && <0.6
+                   containers >=0.5.0 && <0.6,
+                   data-reify >=0.6 && <0.7
   ghc-options:     -Wall
   other-modules:   
                    Grammar,
@@ -19,7 +20,8 @@ executable BoarH
                    Graph,
                    Parser.Earley,
                    ParseState,
-                   Generate.EarleyStates
+                   Generate.EarleyStates,
+                   Data.Bundle
 
 test-suite GraphTest
   type:            exitcode-stdio-1.0
@@ -34,7 +36,8 @@ test-suite GraphTest
                   TestMain,
                   Parser.Earley,
                   ParseState,
-                  Generate.EarleyStates
+                  Generate.EarleyStates,
+                  Data.Bundle
   hs-source-dirs:  
                   test,
                   src 

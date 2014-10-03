@@ -1,11 +1,11 @@
 module ProdState where
 
-import           Data.Set (Set)
-import qualified Data.Set as S
+import           Control.Monad (liftM)
+import           Data.Maybe    (isNothing)
+import           Data.Set      (Set)
+import qualified Data.Set      as S
 import           Grammar
-import qualified Grammar  as G
-import Control.Monad (liftM)
-import Data.Maybe (isJust)
+import qualified Grammar       as G
 
 -- Helpers
 -----------
@@ -49,7 +49,7 @@ step (ProdState r@(Rule _ prod) i) = do
 --
 -- For example: @a -> b c .@ and @a -> .@ would both return true.
 complete :: ProdState a -> Bool
-complete ps = not (isJust (step ps))
+complete ps = isNothing (step ps)
 
 -- | Returns the 'Just' of the element just after the dot in a production state,
 -- or 'Nothing' if the production state is complete.

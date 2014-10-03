@@ -6,7 +6,7 @@ import           Data.Sequence (Seq)
 import qualified Data.Sequence as Seq
 import           Data.Set      (Set)
 import qualified Data.Set      as Set
-import           ProdState     hiding (next, nextState)
+import           ProdState     hiding (next)
 import qualified ProdState     as PS
 
 -- Helpers
@@ -32,7 +32,7 @@ type EarleyStateSequence a = Seq (EarleyState a)
 
 next :: Ord a => a -> ParseItem a -> Maybe (ParseItem a)
 next a it = do
-  nextState <- PS.next a (prodState it) 
+  nextState <- PS.next a (prodState it)
   return it { prodState = nextState }
 
 reduce :: Ord a => Int -> ParseItem a -> EarleyStateSequence a -> EarleyStateSequence a
@@ -47,5 +47,5 @@ reduce idx item st =
   else st
 
 shift :: Ord a => Int -> a -> EarleyStateSequence a -> EarleyStateSequence a
-shift idx = undefined
+shift _ = undefined
 

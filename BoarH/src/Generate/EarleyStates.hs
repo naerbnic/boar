@@ -1,15 +1,15 @@
 module Generate.EarleyStates where
 
-import           Data.Map   (Map)
-import qualified Data.Map   as M
-import           Data.Set   (Set)
-import qualified Data.Set   as S
+import           Data.Foldable (foldMap)
+import           Data.Map      (Map)
+import qualified Data.Map      as M
+import           Data.Set      (Set)
+import qualified Data.Set      as S
+import           Data.Tuple    (swap)
+import           Fixpoint
+import           Grammar
 import           ParseState
-import Grammar
-import Fixpoint
-import Data.Foldable (foldMap)
-import qualified ProdState as PS
-import Data.Tuple (swap)
+import qualified ProdState     as PS
 
 -- Utilities
 
@@ -44,7 +44,7 @@ data ResultStates a = ResultStates
 
 {-|
 For a given Earley state, this shows which nonterminals are complete in this
-state, as well as what transitions are available, and their resulting 
+state, as well as what transitions are available, and their resulting
 result states.
 -}
 data EarleyInfo a = EarleyInfo
@@ -67,14 +67,14 @@ nextToResultStates g st = let
   -- Nullable expand everything in this state, as those will all share the
   -- same origin
   currClosure = fixpointSet (expandProdStateNullable g) st
-  
+
   -- Seed for those things that will have a new origin
   nextSeed = foldMap (expandProdStateNT g) currClosure
-  
+
   -- Perform a closure on the seed to create the set of all things that
   -- has the new origin
   freshSet = expandClosure g nextSeed
-  in ResultStates currClosure 
+  in ResultStates currClosure
                   (if S.null freshSet then Nothing else Just freshSet)
 
 -- | Creates the Earley info for a parse state
@@ -82,31 +82,31 @@ stateTransitions :: Ord a => Grammar a -> State a -> Map a (ResultStates a)
 stateTransitions g st = let
   nexts = stateNexts st
   in M.map (nextToResultStates g) $ M.fromList (map swap nexts)
-  
+
 incStates :: Ord a => Map (State a) (Map a (ResultStates a)) -> Set (State a)
 incStates trans = S.fromList $ map incState $ concatMap M.elems (M.elems trans)
-  
+
 -- | Returns all parse states inside the Earley info.
 transStates :: Ord a => Map a (ResultStates a) -> Set (State a)
 transStates m = let
   results = M.elems m
-  
+
   resultStates (ResultStates i f) = S.singleton i `S.union` case f of
     Nothing -> S.empty
     Just st -> S.singleton st
   in S.unions $ map resultStates results
-  
+
 earleyStates :: Ord a => Grammar a -> Set (State a)
 earleyStates g = let
   expandedInitialState = expandClosure g (initialState g)
   in fixpointSet (transStates . stateTransitions g)
                  (S.singleton expandedInitialState)
-                 
+
 earleyStateCollection :: Ord a => Grammar a -> StateCollection a
 earleyStateCollection g = let
   stateTransitionsMap = setToMap (stateTransitions g) (earleyStates g)
   incStatesSet = incStates stateTransitionsMap
-  
+
   statesMap = M.mapWithKey (\k v -> let
     completeSet = if k `S.member` incStatesSet
       then S.map PS.lhs $ S.filter PS.complete k
