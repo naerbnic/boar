@@ -8,18 +8,18 @@ module ParseState
   , createLR0States
   ) where
 
+import qualified Data.Map   as M
 import           Data.Maybe (catMaybes)
 import           Data.Set   (Set)
 import qualified Data.Set   as S
+import           Data.Tuple (swap)
 import           Fixpoint
 import           Grammar    hiding (lhs, start)
 import qualified Grammar    as G
 import           Graph      (Graph, Node (..))
 import qualified Graph      as GR
-import qualified MultiMap as MM
-import qualified Data.Map as M
+import qualified MultiMap   as MM
 import           ProdState
-import Data.Tuple (swap)
 
 -- Helpers
 
@@ -40,8 +40,8 @@ stateNexts st = map swap $ M.toList $ MM.toMap $ MM.from $ mapMaybeSet step st
 
 expandNTerm :: Ord a => Grammar a -> a -> State a
 expandNTerm g nt = S.fromList $ do
-  rule <- ntermRules g nt
-  return $ start rule
+  r <- ntermRules g nt
+  return $ start r
 
 initialState :: Ord a => Grammar a -> State a
 initialState g = expandClosure g (expandNTerm g (G.start g))

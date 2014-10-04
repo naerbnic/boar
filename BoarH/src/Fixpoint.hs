@@ -1,8 +1,8 @@
 module Fixpoint where
 
-import           Data.Set (Set)
-import qualified Data.Set as S
-import Data.Foldable (foldMap)
+import           Data.Foldable (foldMap)
+import           Data.Set      (Set)
+import qualified Data.Set      as S
 
 fixpointEq :: Eq a => (a -> a) -> a -> a
 fixpointEq f = go

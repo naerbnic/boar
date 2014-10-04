@@ -3,13 +3,13 @@ module Generate.EarleyStates where
 import           Data.Foldable (foldMap)
 import           Data.Map      (Map)
 import qualified Data.Map      as M
-import           MultiMap (MultiMap)
-import qualified MultiMap as MM
 import           Data.Set      (Set)
 import qualified Data.Set      as S
 import           Data.Tuple    (swap)
 import           Fixpoint
 import           Grammar
+import           MultiMap      (MultiMap)
+import qualified MultiMap      as MM
 import           ParseState
 import qualified ProdState     as PS
 
@@ -108,14 +108,14 @@ earleyStateCollection :: Ord a => Grammar a -> StateCollection (State a) a
 earleyStateCollection g = let
   stateTransitionsMap = setToMap (stateTransitions g) (earleyStates g)
   incStatesSet = incStates stateTransitionsMap
-  
+
   makeInfo k v = let
     completeSet = if k `S.member` incStatesSet
       then S.map PS.rule $ S.filter PS.complete k
       else S.empty
-      
+
     in EarleyInfo (MM.groupValues lhs completeSet) v
 
   statesMap = M.mapWithKey makeInfo stateTransitionsMap
-  
+
   in StateCollection (initialState g) statesMap
