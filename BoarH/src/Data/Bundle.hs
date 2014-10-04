@@ -1,11 +1,12 @@
-{-# LANGUAGE TypeFamilies, TupleSections, RankNTypes #-}
+{-# LANGUAGE TypeFamilies, TupleSections, RankNTypes, ScopedTypeVariables #-}
 module Data.Bundle
   ( Bundle()
   , fromList
-  , singleton
   , empty
   , merge
   , cons
+  , append
+  , parallel
   , toLists
   ) where
 
@@ -13,6 +14,11 @@ import Data.Reify
 import Control.Applicative ((<$>), (<*>), pure)
 import qualified Data.IntMap as IM
 import System.IO.Unsafe (unsafePerformIO)
+import Data.Foldable (Foldable)
+import qualified Data.Foldable as F
+import Data.Monoid
+import           Prelude
+import qualified Prelude as P
 
 {-|
 An efficient functional data structure for keeping parallel lists
@@ -23,11 +29,7 @@ data Bundle a
   | End
 
 fromList :: [a] -> Bundle a
-fromList = foldr Next End
-
--- @singleton lst@ returns a bundle that is equivalent to @[lst]@.
-singleton :: [a] -> Bundle a
-singleton = foldr Next End
+fromList = P.foldr Next End
 
 empty :: Bundle a
 empty = End
@@ -38,6 +40,11 @@ merge = Merge
 
 cons :: a -> Bundle a -> Bundle a
 cons = Next
+
+-- | Adds all elements in the foldable as separate lists to Bundle. Must have
+-- at least one element
+parallel :: Foldable t => t a -> Bundle a 
+parallel fld = P.foldr1 Merge $ P.map (`Next` End) $ F.toList fld
 
 data Bundle' a ref
   = Next' a ref
@@ -63,15 +70,41 @@ structuralMapIO f t = do
     
 {-# NOINLINE structuralMap #-}
 structuralMap :: MuRef t => (forall a . (a -> b) -> DeRef t a -> b) -> t -> b
-structuralMap f t = unsafePerformIO $ structuralMapIO f t
+structuralMap f t =
+  -- Although generally unsafe, performing the reification and conversion on
+  -- MuRefable data structures should have no side effects overall, and there is
+  -- no chance of a leak, so this should be safe.
+  unsafePerformIO $ structuralMapIO f t
 
 toLists :: Bundle a -> [[a]]
 toLists = structuralMap innerToLists
   where
     innerToLists f bv = case bv of
-      Next' a i -> map (a:) (f i)
+      Next' a i -> P.map (a:) (f i)
       Merge' i1 i2 -> f i1 ++ f i2
       End' -> [[]]
+      
+append :: forall a . Bundle a -> Bundle a -> Bundle a
+append b1 b2 = structuralMap go b1
+  where
+    go :: (b -> Bundle a) -> Bundle' a b -> Bundle a
+    go f b = case b of
+      Next' a i -> Next a (f i)
+      Merge' i1 i2 -> Merge (f i1) (f i2)
+      End' -> b2
+      
+map :: forall a b . (a -> b) -> Bundle a -> Bundle b
+map f b = structuralMap go b
+  where
+    go :: (c -> Bundle b) -> Bundle' a c -> Bundle b
+    go get b = case b of
+      Next' a i -> Next (f a) (get i)
+      Merge' i1 i2 -> Merge (get i1) (get i2)
+      End' -> End
+      
+instance Monoid (Bundle a) where
+  mempty = End
+  mappend = append
       
 test :: Bundle Int
 test = let

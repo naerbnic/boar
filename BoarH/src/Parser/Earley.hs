@@ -1,13 +1,24 @@
 -- | A standard inefficient Earley parser
 module Parser.Earley where
 
-import           Data.Maybe    (mapMaybe)
+import           Data.Maybe    (mapMaybe, fromJust)
 import           Data.Sequence (Seq)
 import qualified Data.Sequence as Seq
 import           Data.Set      (Set)
 import qualified Data.Set      as Set
-import           ProdState     hiding (next)
+import           Data.Map      (Map)
+import qualified Data.Map      as Map
+import           MultiMap      (MultiMap)
+import qualified MultiMap      as MM
+import           ProdState     hiding (next, step)
 import qualified ProdState     as PS
+import           Prelude       hiding (init)
+import           Grammar
+import           Data.Bundle   (Bundle)
+import qualified Data.Bundle   as B
+
+import           Generate.EarleyStates hiding (stateTransitions)
+import qualified Generate.EarleyStates as ES
 
 -- Helpers
 ----------
@@ -18,34 +29,80 @@ listOpToSetOp f = Set.fromList . f . Set.toList
 setConcatMap :: (Ord a, Ord b) => (a -> Maybe b) -> Set a -> Set b
 setConcatMap f = listOpToSetOp (mapMaybe f)
 
+seqLastMaybe :: Seq a -> Maybe a
+seqLastMaybe s = case Seq.viewr s of
+  _ Seq.:> a -> Just a
+  Seq.EmptyR -> Nothing
+  
+seqLast :: Seq a -> a
+seqLast = fromJust . seqLastMaybe
+
 -- Data Structures
 ------------------
 
-data ParseItem a = ParseItem
-  { prodState :: ProdState a
-  , origin    :: Int
-  } deriving (Show, Eq, Ord)
+data Inst a = Reduce (Rule a)
+            | Shift a
+            
+type ParseResult a = Bundle (Inst a)
 
-type EarleyState a = Set (ParseItem a)
+data Item k = Item
+  { itemState :: k
+  , itemOrigin :: Int
+  } deriving (Eq, Ord)
 
-type EarleyStateSequence a = Seq (EarleyState a)
+data EarleyState k a = EarleyState
+  { stateItems :: Map (Item k) (ParseResult a)
+  , stateTransitions :: Map (Maybe a) (Map (Item k) (Bundle (Rule a)))
+  } 
 
-next :: Ord a => a -> ParseItem a -> Maybe (ParseItem a)
-next a it = do
-  nextState <- PS.next a (prodState it)
-  return it { prodState = nextState }
+type EarleyStateSequence k a = Seq (EarleyState k a)
 
-reduce :: Ord a => Int -> ParseItem a -> EarleyStateSequence a -> EarleyStateSequence a
-reduce idx item st =
-  if complete $ prodState item
-  then let
-    orig = origin item
-    items = st `Seq.index` orig
-    l = PS.lhs $ prodState item
-    validNextItems = setConcatMap (next l) items
-    in Seq.adjust (Set.union validNextItems) idx st
-  else st
+-- Item Functions
+-----------------
 
-shift :: Ord a => Int -> a -> EarleyStateSequence a -> EarleyStateSequence a
-shift _ = undefined
+reduceItem :: (Ord k, Ord a)
+           => StateCollection k a
+           -> EarleyStateSequence k a
+           -> Item k
+           -> Map (Item k) (Bundle (Rule a))
+reduceItem col stateSeq (Item k i) = let
+  completeTransitions = MM.toMap $ ES.complete (states col Map.! k)
+  
+  reduceNT a ruleSet = let
+    ruleBundle = B.parallel ruleSet
+    originState = stateSeq `Seq.index` i
+    transition = stateTransitions originState Map.! Just a
+    in Map.map (`B.append` ruleBundle) transition
+    
+  mapList = map (uncurry reduceNT) $ Map.toList completeTransitions
+  
+  in Map.unionsWith B.merge mapList
 
+-- Main Parsing Functions
+-------------------------
+
+init :: Ord k => StateCollection k (Maybe a) -> EarleyState k a
+init = undefined
+
+step :: Ord k => StateCollection k (Maybe a) -> EarleyStateSequence k a -> a -> EarleyState k a
+step = undefined
+
+end :: (Ord k, Ord a) => StateCollection k (Maybe a) -> EarleyStateSequence k a -> ParseResult a
+end col st = let
+  lastState = seqLast st
+  
+  lastItems = stateItems lastState
+
+  result = Map.lookup Nothing (stateTransitions lastState)
+  in undefined
+
+run :: (Ord k, Ord a) => StateCollection k (Maybe a) -> [a] -> ParseResult a
+run col lst = let
+  initSeq = Seq.singleton (init col)
+  
+  stepSeq currSeq a = let
+    nextState = step col currSeq a
+    in currSeq Seq.|> nextState
+  
+  result = foldl stepSeq initSeq lst
+  in end col result

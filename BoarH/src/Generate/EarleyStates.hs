@@ -3,6 +3,8 @@ module Generate.EarleyStates where
 import           Data.Foldable (foldMap)
 import           Data.Map      (Map)
 import qualified Data.Map      as M
+import           MultiMap (MultiMap)
+import qualified MultiMap as MM
 import           Data.Set      (Set)
 import qualified Data.Set      as S
 import           Data.Tuple    (swap)
@@ -37,9 +39,9 @@ c -> . BAZ
 
 assuming the appropriate rules in the grammar.
 -}
-data ResultStates a = ResultStates
-  { incState   :: State a
-  , freshState :: Maybe (State a)
+data ResultStates k = ResultStates
+  { incState   :: k
+  , freshState :: Maybe k
   } deriving (Eq, Ord, Show)
 
 {-|
@@ -47,22 +49,22 @@ For a given Earley state, this shows which nonterminals are complete in this
 state, as well as what transitions are available, and their resulting
 result states.
 -}
-data EarleyInfo a = EarleyInfo
-  { complete    :: Set a
-  , transitions :: Map a (ResultStates a)
+data EarleyInfo k a = EarleyInfo
+  { complete    :: MultiMap a (Rule a)
+  , transitions :: Map a (ResultStates k)
   } deriving (Eq, Ord, Show)
 
 {-|
 
 -}
-data StateCollection a = StateCollection
-  { startState :: State a
-  , states     :: Map (State a) (EarleyInfo a)
+data StateCollection k a = StateCollection
+  { startState :: k
+  , states     :: Map k (EarleyInfo k a)
   } deriving (Eq, Ord, Show)
 
 -- | Creates a result state given an incomplete transition state, such as
 -- the result of stateNexts.
-nextToResultStates :: Ord a => Grammar a -> State a -> ResultStates a
+nextToResultStates :: Ord a => Grammar a -> State a -> ResultStates (State a)
 nextToResultStates g st = let
   -- Nullable expand everything in this state, as those will all share the
   -- same origin
@@ -78,16 +80,16 @@ nextToResultStates g st = let
                   (if S.null freshSet then Nothing else Just freshSet)
 
 -- | Creates the Earley info for a parse state
-stateTransitions :: Ord a => Grammar a -> State a -> Map a (ResultStates a)
+stateTransitions :: Ord a => Grammar a -> State a -> Map a (ResultStates (State a))
 stateTransitions g st = let
   nexts = stateNexts st
   in M.map (nextToResultStates g) $ M.fromList (map swap nexts)
 
-incStates :: Ord a => Map (State a) (Map a (ResultStates a)) -> Set (State a)
+incStates :: Ord a => Map (State a) (Map a (ResultStates (State a))) -> Set (State a)
 incStates trans = S.fromList $ map incState $ concatMap M.elems (M.elems trans)
 
 -- | Returns all parse states inside the Earley info.
-transStates :: Ord a => Map a (ResultStates a) -> Set (State a)
+transStates :: Ord a => Map a (ResultStates (State a)) -> Set (State a)
 transStates m = let
   results = M.elems m
 
@@ -102,14 +104,18 @@ earleyStates g = let
   in fixpointSet (transStates . stateTransitions g)
                  (S.singleton expandedInitialState)
 
-earleyStateCollection :: Ord a => Grammar a -> StateCollection a
+earleyStateCollection :: Ord a => Grammar a -> StateCollection (State a) a
 earleyStateCollection g = let
   stateTransitionsMap = setToMap (stateTransitions g) (earleyStates g)
   incStatesSet = incStates stateTransitionsMap
-
-  statesMap = M.mapWithKey (\k v -> let
+  
+  makeInfo k v = let
     completeSet = if k `S.member` incStatesSet
-      then S.map PS.lhs $ S.filter PS.complete k
+      then S.map PS.rule $ S.filter PS.complete k
       else S.empty
-    in EarleyInfo completeSet v) stateTransitionsMap
+      
+    in EarleyInfo (MM.groupValues lhs completeSet) v
+
+  statesMap = M.mapWithKey makeInfo stateTransitionsMap
+  
   in StateCollection (initialState g) statesMap

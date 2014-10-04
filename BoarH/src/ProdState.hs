@@ -24,8 +24,10 @@ listIndexMaybe _ _ = Nothing
 --
 -- For example: @a -> b . c@
 --
-data ProdState a = ProdState (Rule a) Int
-  deriving (Eq, Ord)
+data ProdState a = ProdState 
+  { rule :: Rule a
+  , pos :: Int
+  } deriving (Eq, Ord)
 
 instance Show a => Show (ProdState a) where
   show (ProdState (Rule l r) i) =
