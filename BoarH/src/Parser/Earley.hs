@@ -17,6 +17,10 @@ import           Prelude               hiding (init)
 import           Generate.EarleyStates hiding (stateTransitions)
 import qualified Generate.EarleyStates as ES
 
+import           Control.Monad         (foldM)
+import           Data.IRef
+import           Data.Traversable      (traverse)
+
 -- Helpers
 ----------
 
@@ -34,57 +38,72 @@ seqLastMaybe s = case Seq.viewr s of
 seqLast :: Seq a -> a
 seqLast = fromJust . seqLastMaybe
 
+partialLift2 :: Monad m => (a -> b -> m r) -> m a -> m b -> m r
+partialLift2 f ma mb = do
+  a <- ma
+  b <- mb
+  f a b
+
 -- Data Structures
 ------------------
 
 data Inst a = Reduce (Rule a)
             | Shift a
 
-type ParseResult a = Bundle (Inst a)
+type ParseResult s a = Bundle s (Inst a)
 
 data Item k = Item
   { itemState  :: k
   , itemOrigin :: Int
   } deriving (Eq, Ord)
 
-data EarleyState k a = EarleyState
-  { stateItems       :: Map (Item k) (ParseResult a)
-  , stateTransitions :: Map (Maybe a) (Map (Item k) (Bundle (Rule a)))
+data EarleyState s k a = EarleyState
+  { stateItems       :: Map (Item k) (ParseResult s a)
+  , stateTransitions :: Map (Maybe a) (Map (Item k) (Bundle s (Rule a)))
   }
 
-type EarleyStateSequence k a = Seq (EarleyState k a)
+type EarleyStateSequence s k a = Seq (EarleyState s k a)
 
 -- Item Functions
 -----------------
 
 reduceItem :: (Ord k, Ord a)
            => StateCollection k a
-           -> EarleyStateSequence k a
+           -> EarleyStateSequence s k a
            -> Item k
-           -> Map (Item k) (Bundle (Rule a))
+           -> RT s (Map (Item k) (Bundle s (Rule a)))
 reduceItem col stateSeq (Item k i) = let
   completeTransitions = MM.toMap $ ES.complete (states col Map.! k)
 
-  reduceNT a ruleSet = let
-    ruleBundle = B.parallel ruleSet
-    originState = stateSeq `Seq.index` i
-    transition = stateTransitions originState Map.! Just a
-    in Map.map (`B.append` ruleBundle) transition
+  reduceNT a ruleSet = do
+    ruleBundle <- B.parallel ruleSet
+    let originState = stateSeq `Seq.index` i
+    let transition = stateTransitions originState Map.! Just a
+    return $ Map.map (`B.append` ruleBundle) transition
 
-  mapList = map (uncurry reduceNT) $ Map.toList completeTransitions
-
-  in Map.unionsWith B.merge mapList
+  in do
+    mapList <- mapM (uncurry reduceNT) (Map.toList completeTransitions)
+    traverse id $ Map.unionsWith (partialLift2 B.merge) mapList
 
 -- Main Parsing Functions
 -------------------------
 
-init :: Ord k => StateCollection k (Maybe a) -> EarleyState k a
+init :: Ord k
+     => StateCollection k (Maybe a)
+     -> RT s (EarleyState s k a)
 init = undefined
 
-step :: Ord k => StateCollection k (Maybe a) -> EarleyStateSequence k a -> a -> EarleyState k a
+step :: Ord k
+     => StateCollection k (Maybe a)
+     -> EarleyStateSequence s k a
+     -> a
+     -> RT s (EarleyState s k a)
 step = undefined
 
-end :: (Ord k, Ord a) => StateCollection k (Maybe a) -> EarleyStateSequence k a -> ParseResult a
+end :: (Ord k, Ord a)
+    => StateCollection k (Maybe a)
+    -> EarleyStateSequence s k a
+    -> RT s (ParseResult s a)
 end col st = let
   lastState = seqLast st
 
@@ -93,13 +112,16 @@ end col st = let
   result = Map.lookup Nothing (stateTransitions lastState)
   in undefined
 
-run :: (Ord k, Ord a) => StateCollection k (Maybe a) -> [a] -> ParseResult a
-run col lst = let
-  initSeq = Seq.singleton (init col)
+run :: (Ord k, Ord a) => StateCollection k (Maybe a) -> [a] -> RT s (ParseResult s a)
+run col lst = do
+  initState <- init col
+  let initSeq = Seq.singleton initState
 
-  stepSeq currSeq a = let
-    nextState = step col currSeq a
-    in currSeq Seq.|> nextState
+  result <- let
+    stepSeq currSeq a = do
+      nextState <- step col currSeq a
+      return $ currSeq Seq.|> nextState
 
-  result = foldl stepSeq initSeq lst
-  in end col result
+    in foldM stepSeq initSeq lst
+
+  end col result
