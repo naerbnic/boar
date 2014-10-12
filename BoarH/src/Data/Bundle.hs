@@ -1,9 +1,9 @@
-{-# LANGUAGE RankNTypes          #-}
-{-# LANGUAGE ScopedTypeVariables #-}
-{-# LANGUAGE TupleSections       #-}
-{-# LANGUAGE TypeFamilies        #-}
-{-# Language FlexibleInstances #-}
-{-# Language MultiParamTypeClasses #-}
+{-# LANGUAGE FlexibleInstances     #-}
+{-# LANGUAGE MultiParamTypeClasses #-}
+{-# LANGUAGE RankNTypes            #-}
+{-# LANGUAGE ScopedTypeVariables   #-}
+{-# LANGUAGE TupleSections         #-}
+{-# LANGUAGE TypeFamilies          #-}
 module Data.Bundle
   ( Bundle()
   , fromList
@@ -11,17 +11,19 @@ module Data.Bundle
   , merge
   , cons
   , append
+  , map
   , parallel
   , toLists
   ) where
 
 import           Control.Applicative (pure, (<$>), (<*>))
+import           Control.Monad       (liftM)
+import           Control.Monad.Fix   (MonadFix)
 import           Data.Foldable       (Foldable)
 import qualified Data.Foldable       as F
-import           Prelude
-import qualified Prelude             as P
 import           Data.IRef
-import Control.Monad (liftM)
+import           Prelude             hiding (foldr, map)
+import qualified Prelude             as P
 
 -- Helpers
 ----------
@@ -30,7 +32,7 @@ foldrM :: Monad m => (a -> b -> m b) -> [a] -> m b -> m b
 foldrM f lst initial = case lst of
   [] -> initial
   a:r -> foldrM f r initial >>= f a
-  
+
 foldl1M :: Monad m => (a -> a -> m a) -> [a] -> m a
 foldl1M _ [a] = return a
 foldl1M f (a:r) = foldl1M f r >>= f a
@@ -43,7 +45,7 @@ data BundleBase s a
   = Next a (Bundle s a)
   | Merge (Bundle s a) (Bundle s a)
   | End
-  
+
 newtype Bundle s a = Bundle (IRef s (BundleBase s a))
 
 liftBase :: BundleBase s a -> RT s (Bundle s a)
@@ -84,31 +86,44 @@ instance MuIRef s (BundleBase s a) where
     Merge (Bundle b1) (Bundle b2) -> Merge' <$> f b1 <*> f b2
     End -> pure End'
 
-toLists :: Bundle s a -> [[a]]
-toLists (Bundle b) = structuralMap innerToLists b
+foldr :: forall s a b. (a -> b -> b)
+      -> (b -> b -> b)
+      -> b
+      -> Bundle s a
+      -> b
+foldr stepF mergeF emptyF (Bundle bundle)  = structuralMap go bundle
   where
-    innerToLists f bv = case bv of
-      Next' a i -> P.map (a:) (f i)
-      Merge' i1 i2 -> f i1 ++ f i2
-      End' -> [[]]
-
-append :: forall s a . Bundle s a -> Bundle s a -> RT s (Bundle s a)
-append (Bundle b1) b2 = structuralMapM go b1
-  where
-    go :: (b -> Bundle s a) -> BundleBase' a b -> RT s (Bundle s a)
-    go f b = case b of
-      Next' a i -> cons a (f i)
-      Merge' i1 i2 -> merge (f i1) (f i2)
-      End' -> return b2
-
-map :: forall s a b . (a -> b) -> Bundle s a -> RT s (Bundle s b)
-map f (Bundle b) = structuralMapM go b
-  where
-    go :: (c -> Bundle s b) -> BundleBase' a c -> RT s (Bundle s b)
+    go :: (c -> b) -> BundleBase' a c -> b
     go get b' = case b' of
-      Next' a i -> cons (f a) (get i)
-      Merge' i1 i2 -> merge (get i1) (get i2)
-      End' -> empty
+      Next' a i -> stepF a (get i)
+      Merge' i1 i2 -> mergeF (get i1) (get i2)
+      End' -> emptyF
+
+bFoldrM :: forall s a b m. (MonadFix m)
+        => (a -> b -> m b)
+        -> (b -> b -> m b)
+        -> m b
+        -> Bundle s a
+        -> m b
+bFoldrM stepF mergeF emptyF (Bundle bundle)  = structuralMapM go bundle
+  where
+    go :: (c -> b) -> BundleBase' a c -> m b
+    go get b' = case b' of
+      Next' a i -> stepF a (get i)
+      Merge' i1 i2 -> mergeF (get i1) (get i2)
+      End' -> emptyF
+
+toLists :: Bundle s a -> [[a]]
+toLists = foldr
+  (\a -> P.map (a:))
+  (++)
+  [[]]
+
+append :: Bundle s a -> Bundle s a -> RT s (Bundle s a)
+append b1 b2 = bFoldrM cons merge (return b2) b1
+
+map :: (a -> b) -> Bundle s a -> RT s (Bundle s b)
+map f = bFoldrM (cons . f) merge empty
 
 test :: RT s (Bundle s Int)
 test = do
@@ -117,7 +132,7 @@ test = do
   z <- cons 4 x
   w <- merge y z
   cons 5 w
-  
-  
+
+
 result :: [[Int]]
 result = runRT (liftM toLists test)

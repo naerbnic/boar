@@ -23,7 +23,9 @@ executable BoarH
                    ParseState,
                    Generate.EarleyStates,
                    Data.Bundle,
-                   Data.IRef
+                   Data.IRef,
+                   ParseData.Action,
+                   ParseData.StateTable
 
 test-suite GraphTest
   type:            exitcode-stdio-1.0
@@ -41,7 +43,9 @@ test-suite GraphTest
                   ParseState,
                   Generate.EarleyStates,
                   Data.Bundle,
-                  Data.IRef
+                  Data.IRef,
+                  ParseData.Action,
+                  ParseData.StateTable
   hs-source-dirs:  
                   test,
                   src 
