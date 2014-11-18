@@ -1,5 +1,5 @@
 {-# LANGUAGE GeneralizedNewtypeDeriving #-}
-module MultiMap
+module Boar.Util.MultiMap
   ( MultiMap()
   , toMap
   , mapValues
@@ -30,7 +30,7 @@ import           Data.Monoid   (Monoid (..))
 import           Data.Set      (Set)
 import qualified Data.Set      as S
 import           Data.Tuple    (swap)
-import           Fixpoint
+import           Boar.Util.Fixpoint
 
 -- | A structure that maps each value in the domain to zero or more values in
 -- the range.

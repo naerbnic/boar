@@ -1,4 +1,4 @@
-module Fixpoint where
+module Boar.Util.Fixpoint where
 
 import           Data.Foldable (foldMap)
 import           Data.Set      (Set)

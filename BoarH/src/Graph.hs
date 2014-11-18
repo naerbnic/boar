@@ -36,7 +36,7 @@ import           Control.Arrow ((&&&))
 import           Data.Map      (Map)
 import qualified Data.Map      as M
 import qualified Data.Set      as S
-import           Fixpoint
+import           Boar.Util.Fixpoint
 import           Prelude       hiding (reverse)
 
 -- Helpers

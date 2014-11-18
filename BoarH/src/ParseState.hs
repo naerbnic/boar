@@ -13,12 +13,12 @@ import           Data.Maybe (catMaybes)
 import           Data.Set   (Set)
 import qualified Data.Set   as S
 import           Data.Tuple (swap)
-import           Fixpoint
+import           Boar.Util.Fixpoint
 import           Grammar    hiding (lhs, start)
 import qualified Grammar    as G
 import           Graph      (Graph, Node (..))
 import qualified Graph      as GR
-import qualified MultiMap   as MM
+import qualified Boar.Util.MultiMap   as MM
 import           ProdState
 
 -- Helpers

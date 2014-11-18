@@ -6,10 +6,10 @@ import qualified Data.Map      as M
 import           Data.Set      (Set)
 import qualified Data.Set      as S
 import           Data.Tuple    (swap)
-import           Fixpoint
+import           Boar.Util.Fixpoint
 import           Grammar
-import           MultiMap      (MultiMap)
-import qualified MultiMap      as MM
+import           Boar.Util.MultiMap      (MultiMap)
+import qualified Boar.Util.MultiMap      as MM
 import           ParseState
 import qualified ProdState     as PS
 

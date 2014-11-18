@@ -8,9 +8,9 @@ import           Data.Maybe  (fromJust)
 import           Data.Monoid (Monoid (..), (<>))
 import           Data.Set    (Set)
 import qualified Data.Set    as S
-import           Fixpoint
-import           MultiMap    (MultiMap)
-import qualified MultiMap    as MM
+import           Boar.Util.Fixpoint
+import           Boar.Util.MultiMap    (MultiMap)
+import qualified Boar.Util.MultiMap    as MM
 
 type Prod = []
 

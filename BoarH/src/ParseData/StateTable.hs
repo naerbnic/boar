@@ -1,7 +1,7 @@
 {-# LANGUAGE ExistentialQuantification #-}
 module ParseData.StateTable where
 
-import MultiMap (MultiMap)
+import Boar.Util.MultiMap (MultiMap)
 import Data.Map (Map)
 import Grammar (Rule)
 

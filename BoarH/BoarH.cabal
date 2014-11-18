@@ -15,9 +15,7 @@ executable BoarH
   ghc-options:     -Wall
   other-modules:   
                    Grammar,
-                   MultiMap,
                    ProdState,
-                   Fixpoint,
                    Graph,
                    Parser.Earley,
                    ParseState,
@@ -27,7 +25,9 @@ executable BoarH
                    ParseData.Action,
                    ParseData.StateTable,
                    Boar.Util.Wrapped,
-                   Boar.Util.ConstrainedFunctor
+                   Boar.Util.ConstrainedFunctor,
+                   Boar.Util.MultiMap,
+                   Boar.Util.Fixpoint
 
 test-suite GraphTest
   type:            exitcode-stdio-1.0
