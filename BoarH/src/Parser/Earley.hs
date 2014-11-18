@@ -11,7 +11,7 @@ import qualified Data.Sequence         as Seq
 import           Data.Set              (Set)
 import qualified Data.Set              as Set
 import           Grammar
-import qualified Boar.Util.MultiMap              as MM
+import qualified Boar.Data.MultiMap              as MM
 import           Prelude               hiding (init)
 
 import           Generate.EarleyStates hiding (stateTransitions)

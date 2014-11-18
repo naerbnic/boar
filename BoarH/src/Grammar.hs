@@ -9,8 +9,8 @@ import           Data.Monoid (Monoid (..), (<>))
 import           Data.Set    (Set)
 import qualified Data.Set    as S
 import           Boar.Util.Fixpoint
-import           Boar.Util.MultiMap    (MultiMap)
-import qualified Boar.Util.MultiMap    as MM
+import           Boar.Data.MultiMap    (MultiMap)
+import qualified Boar.Data.MultiMap    as MM
 
 type Prod = []
 

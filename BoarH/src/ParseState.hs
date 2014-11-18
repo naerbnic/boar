@@ -18,7 +18,7 @@ import           Grammar    hiding (lhs, start)
 import qualified Grammar    as G
 import           Graph      (Graph, Node (..))
 import qualified Graph      as GR
-import qualified Boar.Util.MultiMap   as MM
+import qualified Boar.Data.MultiMap   as MM
 import           ProdState
 
 -- Helpers

@@ -24,9 +24,9 @@ executable BoarH
                    ParseData.StateTable,
                    Boar.Util.Wrapped,
                    Boar.Util.ConstrainedFunctor,
-                   Boar.Util.MultiMap,
                    Boar.Util.Fixpoint,
-                   Boar.Data.Bundle
+                   Boar.Data.Bundle,
+                   Boar.Data.MultiMap
 
 test-suite GraphTest
   type:            exitcode-stdio-1.0

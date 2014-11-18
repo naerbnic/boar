@@ -8,8 +8,8 @@ import qualified Data.Set      as S
 import           Data.Tuple    (swap)
 import           Boar.Util.Fixpoint
 import           Grammar
-import           Boar.Util.MultiMap      (MultiMap)
-import qualified Boar.Util.MultiMap      as MM
+import           Boar.Data.MultiMap      (MultiMap)
+import qualified Boar.Data.MultiMap      as MM
 import           ParseState
 import qualified ProdState     as PS
 

@@ -1,5 +1,5 @@
 {-# LANGUAGE GeneralizedNewtypeDeriving #-}
-module Boar.Util.MultiMap
+module Boar.Data.MultiMap
   ( MultiMap()
   , toMap
   , mapValues
