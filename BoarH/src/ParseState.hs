@@ -8,17 +8,17 @@ module ParseState
   , createLR0States
   ) where
 
-import qualified Data.Map   as M
-import           Data.Maybe (catMaybes)
-import           Data.Set   (Set)
-import qualified Data.Set   as S
-import           Data.Tuple (swap)
+import qualified Boar.Data.MultiMap as MM
 import           Boar.Util.Fixpoint
-import           Grammar    hiding (lhs, start)
-import qualified Grammar    as G
-import           Graph      (Graph, Node (..))
-import qualified Graph      as GR
-import qualified Boar.Data.MultiMap   as MM
+import qualified Data.Map           as M
+import           Data.Maybe         (catMaybes)
+import           Data.Set           (Set)
+import qualified Data.Set           as S
+import           Data.Tuple         (swap)
+import           Grammar            hiding (lhs, start)
+import qualified Grammar            as G
+import           Graph              (Graph, Node (..))
+import qualified Graph              as GR
 import           ProdState
 
 -- Helpers

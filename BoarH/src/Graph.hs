@@ -32,12 +32,12 @@ module Graph
 
   ) where
 
-import           Control.Arrow ((&&&))
-import           Data.Map      (Map)
-import qualified Data.Map      as M
-import qualified Data.Set      as S
 import           Boar.Util.Fixpoint
-import           Prelude       hiding (reverse)
+import           Control.Arrow      ((&&&))
+import           Data.Map           (Map)
+import qualified Data.Map           as M
+import qualified Data.Set           as S
+import           Prelude            hiding (reverse)
 
 -- Helpers
 ----------
@@ -196,10 +196,11 @@ addEdges combineE edgeList g = foldr (addEdge combineE) g edgeList
 -- merge the pair of node values. The order of this application is undefined.
 addNode :: Ord k => CombineFunc n -> Node k n -> Graph k n e -> Graph k n e
 addNode combineN n (Graph m) =
-    Graph $ M.alter alt (nodeKey n) m
+  Graph $ M.alter alt (nodeKey n) m
   where
     alt Nothing = Just $ NodeImpl (nodeData n) M.empty
-    alt (Just (NodeImpl n' eMap)) = Just $ NodeImpl (combineN (nodeData n) n') eMap
+    alt (Just (NodeImpl n' eMap)) =
+      Just $ NodeImpl (combineN (nodeData n) n') eMap
 
 -- | Adds all nodes in the list to the graph.
 --
