@@ -25,7 +25,9 @@ executable BoarH
                    Data.Bundle,
                    Data.IRef,
                    ParseData.Action,
-                   ParseData.StateTable
+                   ParseData.StateTable,
+                   Boar.Util.Wrapped,
+                   Boar.Util.ConstrainedFunctor
 
 test-suite GraphTest
   type:            exitcode-stdio-1.0
@@ -45,7 +47,9 @@ test-suite GraphTest
                   Data.Bundle,
                   Data.IRef,
                   ParseData.Action,
-                  ParseData.StateTable
+                  ParseData.StateTable,
+                  Boar.Util.Wrapped,
+                  Boar.Util.ConstrainedFunctor
   hs-source-dirs:  
                   test,
                   src 

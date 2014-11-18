@@ -85,11 +85,11 @@ stateTransitions g st = let
   nexts = stateNexts st
   in M.map (nextToResultStates g) $ M.fromList (map swap nexts)
 
-incStates :: Ord a => Map (State a) (Map a (ResultStates (State a))) -> Set (State a)
+incStates :: (Ord a, Ord k) => Map k (Map a (ResultStates k)) -> Set k
 incStates trans = S.fromList $ map incState $ concatMap M.elems (M.elems trans)
 
 -- | Returns all parse states inside the Earley info.
-transStates :: Ord a => Map a (ResultStates (State a)) -> Set (State a)
+transStates :: (Ord a, Ord k) => Map a (ResultStates k) -> Set k
 transStates m = let
   results = M.elems m
 

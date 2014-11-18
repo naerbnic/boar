@@ -42,7 +42,8 @@ instance (Show k, Show v, Ord k, Ord v) => Show (MultiMap k v) where
 
 instance (Ord k, Ord v) => Monoid (MultiMap k v) where
   mempty = MultiMap M.empty
-  mappend (MultiMap m1) (MultiMap m2) = MultiMap $ M.unionWith S.union m1 m2
+  mappend (MultiMap m1) (MultiMap m2) =
+    MultiMap $ M.unionWith S.union m1 m2
 
 -- Utilities
 
@@ -57,8 +58,12 @@ keyValueToAssoc k = map (\v -> (k, v)) . S.toList
 
 -- Functions
 
-mapValuesWith :: (Ord a, Ord b, Ord c) => (a -> b -> Set c) -> MultiMap a b -> MultiMap a c
-mapValuesWith f (MultiMap ins) = MultiMap $ M.filter (not . S.null) $ M.mapWithKey (mapSet . f) ins
+mapValuesWith :: (Ord a, Ord b, Ord c)
+              => (a -> b -> Set c)
+              -> MultiMap a b
+              -> MultiMap a c
+mapValuesWith f (MultiMap ins) =
+  MultiMap $ M.filter (not . S.null) $ M.mapWithKey (mapSet . f) ins
 
 mapValues :: (Ord a, Ord b, Ord c) => (b -> Set c) -> MultiMap a b -> MultiMap a c
 mapValues f = mapValuesWith (const f)

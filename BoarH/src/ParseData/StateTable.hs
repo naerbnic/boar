@@ -1,9 +1,5 @@
 {-# LANGUAGE ExistentialQuantification #-}
-module ParseData.StateTable
-  ( ResultStates(..)
-  , EarleyInfo(..)
-  , StateCollection(..) 
-  ) where
+module ParseData.StateTable where
 
 import MultiMap (MultiMap)
 import Data.Map (Map)
@@ -17,7 +13,7 @@ type Reductions a = [Rule a]
 data ResultStates k a = ResultStates
   { incState   :: k
   , freshState :: Maybe k
-  , reductions :: [[Rule a]]
+  , reductions :: [Reductions a]
   } deriving (Eq, Ord, Show)
 
 {-|

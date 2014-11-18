@@ -42,6 +42,9 @@ lhs (ProdState r _) = G.lhs r
 start :: Rule a -> ProdState a
 start r = ProdState r 0
 
+-- | Advance the point by one step in the prod state, if it is not at the
+-- end, and return the 'Just' of the advanced-over element, and the advanced
+-- prod state, or 'Nothing' if the point is at the end
 step :: ProdState a -> Maybe (a, ProdState a)
 step (ProdState r@(Rule _ prod) i) = do
   a <- listIndexMaybe prod i
