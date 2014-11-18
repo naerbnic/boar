@@ -15,7 +15,7 @@ the monad they are created in.
 This also contains an equivalent of Data.Reify's typeclasses for IRefs, using
 those refs as the points of the graph.
 -}
-module Data.IRef
+module Boar.Data.IRef
   ( RT()
   , IRef()
   , newIRef

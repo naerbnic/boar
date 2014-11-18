@@ -4,7 +4,7 @@
 {-# LANGUAGE ScopedTypeVariables   #-}
 {-# LANGUAGE TupleSections         #-}
 {-# LANGUAGE TypeFamilies          #-}
-module Data.Bundle
+module Boar.Data.Bundle
   ( Bundle()
   , fromList
   , empty
@@ -21,7 +21,7 @@ import           Control.Monad       (liftM)
 import           Control.Monad.Fix   (MonadFix)
 import           Data.Foldable       (Foldable)
 import qualified Data.Foldable       as F
-import           Data.IRef
+import           Boar.Data.IRef
 import           Prelude             hiding (foldr, map)
 import qualified Prelude             as P
 

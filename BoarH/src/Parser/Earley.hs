@@ -1,8 +1,8 @@
 -- | A standard inefficient Earley parser
 module Parser.Earley where
 
-import           Data.Bundle           (Bundle)
-import qualified Data.Bundle           as B
+import           Boar.Data.Bundle           (Bundle)
+import qualified Boar.Data.Bundle           as B
 import           Data.Map              (Map)
 import qualified Data.Map              as Map
 import           Data.Maybe            (fromJust, mapMaybe)
@@ -18,7 +18,7 @@ import           Generate.EarleyStates hiding (stateTransitions)
 import qualified Generate.EarleyStates as ES
 
 import           Control.Monad         (foldM)
-import           Data.IRef
+import           Boar.Data.IRef
 import           Data.Traversable      (traverse)
 
 -- Helpers

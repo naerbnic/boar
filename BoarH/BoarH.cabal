@@ -20,14 +20,13 @@ executable BoarH
                    Parser.Earley,
                    ParseState,
                    Generate.EarleyStates,
-                   Data.Bundle,
-                   Data.IRef,
                    ParseData.Action,
                    ParseData.StateTable,
                    Boar.Util.Wrapped,
                    Boar.Util.ConstrainedFunctor,
                    Boar.Util.MultiMap,
-                   Boar.Util.Fixpoint
+                   Boar.Util.Fixpoint,
+                   Boar.Data.Bundle
 
 test-suite GraphTest
   type:            exitcode-stdio-1.0
@@ -44,13 +43,14 @@ test-suite GraphTest
                   Parser.Earley,
                   ParseState,
                   Generate.EarleyStates,
-                  Data.Bundle,
-                  Data.IRef,
                   ParseData.Action,
                   ParseData.StateTable,
                   Boar.Util.Wrapped,
-                  Boar.Util.ConstrainedFunctor
+                  Boar.Util.ConstrainedFunctor,
+                  Boar.Data.Bundle
   hs-source-dirs:  
                   test,
                   src 
+
+    src 
 
