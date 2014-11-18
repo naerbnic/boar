@@ -8,6 +8,8 @@ module ParseState
   , createLR0States
   ) where
 
+import           Boar.Data.Graph    (Graph, Node (..))
+import qualified Boar.Data.Graph    as GR
 import qualified Boar.Data.MultiMap as MM
 import           Boar.Util.Fixpoint
 import qualified Data.Map           as M
@@ -17,8 +19,6 @@ import qualified Data.Set           as S
 import           Data.Tuple         (swap)
 import           Grammar            hiding (lhs, start)
 import qualified Grammar            as G
-import           Graph              (Graph, Node (..))
-import qualified Graph              as GR
 import           ProdState
 
 -- Helpers

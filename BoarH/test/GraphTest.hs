@@ -2,9 +2,9 @@
 {-# LANGUAGE FlexibleInstances #-}
 module GraphTest (htf_thisModulesTests) where
 
+import           Boar.Data.Graph (Graph)
+import qualified Boar.Data.Graph as G
 import qualified Data.Map        as M
-import           Graph           (Graph)
-import qualified Graph           as G
 import           Test.Framework
 
 uniqueVectorOf :: (Show b, Ord a) => (b -> a) -> Int -> Gen b -> Gen [b]

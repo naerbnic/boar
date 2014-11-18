@@ -1,17 +1,17 @@
 module Generate.EarleyStates where
 
-import           Data.Foldable (foldMap)
-import           Data.Map      (Map)
-import qualified Data.Map      as M
-import           Data.Set      (Set)
-import qualified Data.Set      as S
-import           Data.Tuple    (swap)
+import           Boar.Data.MultiMap (MultiMap)
+import qualified Boar.Data.MultiMap as MM
 import           Boar.Util.Fixpoint
+import           Data.Foldable      (foldMap)
+import           Data.Map           (Map)
+import qualified Data.Map           as M
+import           Data.Set           (Set)
+import qualified Data.Set           as S
+import           Data.Tuple         (swap)
 import           Grammar
-import           Boar.Data.MultiMap      (MultiMap)
-import qualified Boar.Data.MultiMap      as MM
 import           ParseState
-import qualified ProdState     as PS
+import qualified ProdState          as PS
 
 -- Utilities
 

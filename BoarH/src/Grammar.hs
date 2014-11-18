@@ -2,15 +2,15 @@
 {-# LANGUAGE ScopedTypeVariables #-}
 module Grammar where
 
-import           Data.Map    (Map)
-import qualified Data.Map    as M
-import           Data.Maybe  (fromJust)
-import           Data.Monoid (Monoid (..), (<>))
-import           Data.Set    (Set)
-import qualified Data.Set    as S
+import           Boar.Data.MultiMap (MultiMap)
+import qualified Boar.Data.MultiMap as MM
 import           Boar.Util.Fixpoint
-import           Boar.Data.MultiMap    (MultiMap)
-import qualified Boar.Data.MultiMap    as MM
+import           Data.Map           (Map)
+import qualified Data.Map           as M
+import           Data.Maybe         (fromJust)
+import           Data.Monoid        (Monoid (..), (<>))
+import           Data.Set           (Set)
+import qualified Data.Set           as S
 
 type Prod = []
 

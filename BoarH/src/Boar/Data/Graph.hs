@@ -2,7 +2,7 @@
 {-# LANGUAGE MultiParamTypeClasses #-}
 {-# LANGUAGE TypeFamilies          #-}
 
-module Graph
+module Boar.Data.Graph
   ( CombineFunc
   , combineEq
 

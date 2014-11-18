@@ -16,7 +16,6 @@ executable BoarH
   other-modules:   
                    Grammar,
                    ProdState,
-                   Graph,
                    Parser.Earley,
                    ParseState,
                    Generate.EarleyStates,
@@ -26,7 +25,8 @@ executable BoarH
                    Boar.Util.ConstrainedFunctor,
                    Boar.Util.Fixpoint,
                    Boar.Data.Bundle,
-                   Boar.Data.MultiMap
+                   Boar.Data.MultiMap,
+                   Boar.Data.Graph
 
 test-suite GraphTest
   type:            exitcode-stdio-1.0
@@ -37,7 +37,6 @@ test-suite GraphTest
                    QuickCheck >=2.6 && <2.7,
                    mtl >=2.1.3 && <2.2
   other-modules:   
-                  Graph,
                   GraphTest,
                   TestMain,
                   Parser.Earley,
@@ -47,7 +46,8 @@ test-suite GraphTest
                   ParseData.StateTable,
                   Boar.Util.Wrapped,
                   Boar.Util.ConstrainedFunctor,
-                  Boar.Data.Bundle
+                  Boar.Data.Bundle,
+                  Boar.Data.Graph
   hs-source-dirs:  
                   test,
                   src 
