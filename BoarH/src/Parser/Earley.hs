@@ -4,6 +4,7 @@ module Parser.Earley where
 import           Boar.Data.Bundle      (Bundle)
 import qualified Boar.Data.Bundle      as B
 import           Boar.Data.IRef
+import           Boar.Base.Rule        (Rule)
 import qualified Boar.Data.MultiMap    as MM
 import           Control.Monad         (foldM)
 import           Data.Map              (Map)
@@ -14,9 +15,8 @@ import qualified Data.Sequence         as Seq
 import           Data.Set              (Set)
 import qualified Data.Set              as Set
 import           Data.Traversable      (traverse)
-import           Generate.EarleyStates hiding (stateTransitions)
-import qualified Generate.EarleyStates as ES
-import           Boar.Base.Grammar
+import           Boar.Generate.EarleyStates hiding (stateTransitions)
+import qualified Boar.Generate.EarleyStates as ES
 import           Prelude               hiding (init)
 
 -- Helpers

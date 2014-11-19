@@ -16,7 +16,6 @@ executable BoarH
   other-modules:   
                    Parser.Earley,
                    ParseState,
-                   Generate.EarleyStates,
                    ParseData.Action,
                    ParseData.StateTable,
                    Boar.Util.Wrapped,
@@ -27,7 +26,8 @@ executable BoarH
                    Boar.Data.Graph,
                    Boar.Base.Rule,
                    Boar.Base.ProdState,
-                   Boar.Base.Grammar
+                   Boar.Base.Grammar,
+                   Boar.Generate.EarleyStates
 
 test-suite GraphTest
   type:            exitcode-stdio-1.0
@@ -42,14 +42,14 @@ test-suite GraphTest
                   TestMain,
                   Parser.Earley,
                   ParseState,
-                  Generate.EarleyStates,
                   ParseData.Action,
                   ParseData.StateTable,
                   Boar.Util.Wrapped,
                   Boar.Util.ConstrainedFunctor,
                   Boar.Data.Bundle,
                   Boar.Data.Graph,
-                  Boar.Base.Rule
+                  Boar.Base.Rule,
+                  Boar.Generate.EarleyStates
   hs-source-dirs:  
                   test,
                   src 

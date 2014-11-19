@@ -1,4 +1,4 @@
-module Generate.EarleyStates where
+module Boar.Generate.EarleyStates where
 
 import           Boar.Data.MultiMap (MultiMap)
 import qualified Boar.Data.MultiMap as MM
