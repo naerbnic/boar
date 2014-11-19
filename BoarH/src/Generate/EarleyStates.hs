@@ -2,6 +2,8 @@ module Generate.EarleyStates where
 
 import           Boar.Data.MultiMap (MultiMap)
 import qualified Boar.Data.MultiMap as MM
+import           Boar.Base.Rule     (Rule)
+import qualified Boar.Base.Rule     as Rule
 import           Boar.Util.Fixpoint
 import           Data.Foldable      (foldMap)
 import           Data.Map           (Map)
@@ -11,7 +13,7 @@ import qualified Data.Set           as S
 import           Data.Tuple         (swap)
 import           Grammar
 import           ParseState
-import qualified ProdState          as PS
+import qualified Boar.Base.ProdState          as PS
 
 -- Utilities
 
@@ -114,7 +116,7 @@ earleyStateCollection g = let
       then S.map PS.rule $ S.filter PS.complete k
       else S.empty
 
-    in EarleyInfo (MM.groupValues lhs completeSet) v
+    in EarleyInfo (MM.groupValues Rule.lhs completeSet) v
 
   statesMap = M.mapWithKey makeInfo stateTransitionsMap
 

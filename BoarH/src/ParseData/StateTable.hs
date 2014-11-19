@@ -3,7 +3,7 @@ module ParseData.StateTable where
 
 import           Boar.Data.MultiMap (MultiMap)
 import           Data.Map           (Map)
-import           Grammar            (Rule)
+import           Boar.Base.Rule            (Rule)
 
 {-|
 A sequence of reductions to apply to the current token stream.

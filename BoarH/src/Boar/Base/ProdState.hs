@@ -1,4 +1,4 @@
-module ProdState where
+module Boar.Base.ProdState where
 
 import           Boar.Base.Rule (Rule(..))
 import qualified Boar.Base.Rule as Rule

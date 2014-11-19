@@ -3,7 +3,7 @@ module ParseData.Action
   , ActionSequence
   ) where
 
-import Grammar (Rule)
+import Boar.Base.Rule (Rule)
 
 data Action a
   = Reduce (Rule a)

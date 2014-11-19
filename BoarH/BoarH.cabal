@@ -15,7 +15,6 @@ executable BoarH
   ghc-options:     -Wall
   other-modules:   
                    Grammar,
-                   ProdState,
                    Parser.Earley,
                    ParseState,
                    Generate.EarleyStates,
@@ -27,7 +26,8 @@ executable BoarH
                    Boar.Data.Bundle,
                    Boar.Data.MultiMap,
                    Boar.Data.Graph,
-                   Boar.Base.Rule
+                   Boar.Base.Rule,
+                   Boar.Base.ProdState
 
 test-suite GraphTest
   type:            exitcode-stdio-1.0
