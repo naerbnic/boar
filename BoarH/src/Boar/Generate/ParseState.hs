@@ -1,11 +1,13 @@
 module Boar.Generate.ParseState
   ( ParseState
   , stateNexts
+  {-
   , expandProdStateNullable
   , expandProdStateNT
   , expandClosure
   , initialState
   , createLR0States
+  -}
   ) where
 
 import           Boar.Data.Graph    (Graph, Node (..))
@@ -57,8 +59,10 @@ nextElems ps = S.fromList $ map snd $ stateNexts ps
 expandNTerm :: Ord a => Grammar a -> a -> ParseState a
 expandNTerm g nt = ParseState $ S.map start $ ntermRules g nt
 
+{-
 initialState :: Ord a => Grammar a -> ParseState a
 initialState g = expandClosure g (expandNTerm g (G.start g))
+
 
 expandProdStateNT :: Ord a => Grammar a -> ProdState a -> ParseState a
 expandProdStateNT g ps = case atPoint ps of
@@ -91,3 +95,4 @@ createLR0States g = GR.unfold
       pairToEdge (_, Start) = error "Unexpected start symbol in rule"
 
       in map pairToEdge nexts
+-}

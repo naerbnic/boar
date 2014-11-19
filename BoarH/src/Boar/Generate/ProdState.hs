@@ -10,8 +10,6 @@ module Boar.Generate.ProdState
   , inc
   , next
   , nullableClosure
-  , nextsOfSet
-  , completeOfSet
   ) where
 
 import           Boar.Base.Rule (Rule(..))
@@ -31,15 +29,6 @@ listIndexMaybe :: [a] -> Int -> Maybe a
 listIndexMaybe (a:_) 0 = Just a
 listIndexMaybe (_:r) i | i > 0 = listIndexMaybe r (i - 1)
 listIndexMaybe _ _ = Nothing
-
-catMaybeSet :: Ord a => Set (Maybe a) -> Set a
-catMaybeSet = Set.fromList . catMaybes . Set.toList
-
-setMapMaybe :: Ord b => (a -> Maybe b) -> Set a -> Set b
-setMapMaybe f s = catMaybeSet $ Set.map f s
-
-recombine :: (Ord a, Ord b) => Set (a, b) -> Map a (Set b)
-recombine = MM.toMap . MM.from
 
 -- ProdState
 ------------
@@ -114,14 +103,3 @@ nullableClosure nullables ps = case step ps of
       else Set.empty
       
 -- Functions on sets of prodstates
-
-nextsOfSet :: Ord a => Set (ProdState a) -> [(a, Set (ProdState a))]
-nextsOfSet st = let
-  rulePairs = setMapMaybe step st
-  recombinedSets = recombine rulePairs
-  in Map.toList recombinedSets
-  
-completeOfSet :: Ord a => Set (ProdState a) -> Set (Rule a)
-completeOfSet =
-  setMapMaybe $ \ps@(ProdState r _) ->
-    if complete ps then Just r else Nothing

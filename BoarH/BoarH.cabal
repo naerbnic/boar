@@ -28,7 +28,8 @@ executable BoarH
                    Boar.Util.Wrapped,
                    ParseData.Action,
                    ParseData.StateTable,
-                   Parser.Earley
+                   Parser.Earley,
+                   Boar.Generate.ProdStateSet
 
 test-suite GraphTest
   type:            exitcode-stdio-1.0
@@ -50,7 +51,8 @@ test-suite GraphTest
                   Boar.Data.Graph,
                   Boar.Base.Rule,
                   Boar.Generate.EarleyStates,
-                  Boar.Generate.ParseState
+                  Boar.Generate.ParseState,
+                  Boar.Generate.ProdStateSet
   hs-source-dirs:  
                   test,
                   src 
