@@ -17,8 +17,8 @@ import           Data.Maybe         (catMaybes)
 import           Data.Set           (Set)
 import qualified Data.Set           as S
 import           Data.Tuple         (swap)
-import           Grammar            hiding (start)
-import qualified Grammar            as G
+import           Boar.Base.Grammar            hiding (start)
+import qualified Boar.Base.Grammar            as G
 import           Boar.Base.ProdState
 
 -- Helpers 

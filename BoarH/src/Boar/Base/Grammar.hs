@@ -1,6 +1,6 @@
 {-# LANGUAGE RankNTypes          #-}
 {-# LANGUAGE ScopedTypeVariables #-}
-module Grammar where
+module Boar.Base.Grammar where
 
 import           Boar.Base.Rule     (Rule(..))
 import qualified Boar.Base.Rule     as Rule

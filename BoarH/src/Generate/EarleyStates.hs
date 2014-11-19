@@ -11,8 +11,8 @@ import qualified Data.Map           as M
 import           Data.Set           (Set)
 import qualified Data.Set           as S
 import           Data.Tuple         (swap)
-import           Grammar
 import           ParseState
+import           Boar.Base.Grammar
 import qualified Boar.Base.ProdState          as PS
 
 -- Utilities

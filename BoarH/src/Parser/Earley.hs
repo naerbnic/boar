@@ -16,7 +16,7 @@ import qualified Data.Set              as Set
 import           Data.Traversable      (traverse)
 import           Generate.EarleyStates hiding (stateTransitions)
 import qualified Generate.EarleyStates as ES
-import           Grammar
+import           Boar.Base.Grammar
 import           Prelude               hiding (init)
 
 -- Helpers
