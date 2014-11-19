@@ -12,6 +12,7 @@ import           Boar.Data.Graph    (Graph, Node (..))
 import qualified Boar.Data.Graph    as GR
 import qualified Boar.Data.MultiMap as MM
 import           Boar.Util.Fixpoint
+import           Data.Map           (Map)
 import qualified Data.Map           as M
 import           Data.Maybe         (catMaybes)
 import           Data.Set           (Set)
@@ -36,14 +37,25 @@ mapMaybeSet f s = catMaybeSet $ S.map f s
 mapFst :: (a -> b) -> (a, c) -> (b, c)
 mapFst f (a, b) = (f a, b)
 
+recombine :: (Ord a, Ord b) => Set (a, b) -> Map a (Set b)
+recombine = MM.toMap . MM.from
+
 -- | A parse state defined as a collection of production states.
-type ParseState a = Set (ProdState a)
+newtype ParseState a = ParseState { prodStates :: Set (ProdState a) }
+  deriving (Eq, Ord, Show)
 
 stateNexts :: Ord a => ParseState a -> [(ParseState a, a)]
-stateNexts st = map swap $ M.toList $ MM.toMap $ MM.from $ mapMaybeSet step st
+stateNexts (ParseState st) = let
+  rulePairs = mapMaybeSet step st
+  recombinedSets = recombine rulePairs
+  recombinedStates = M.map ParseState recombinedSets
+  in map swap $ M.toList recombinedStates
+  
+nextElems :: Ord a => ParseState a -> Set a
+nextElems ps = S.fromList $ map snd $ stateNexts ps
 
 expandNTerm :: Ord a => Grammar a -> a -> ParseState a
-expandNTerm g nt = S.map start $ ntermRules g nt
+expandNTerm g nt = ParseState $ S.map start $ ntermRules g nt
 
 initialState :: Ord a => Grammar a -> ParseState a
 initialState g = expandClosure g (expandNTerm g (G.start g))

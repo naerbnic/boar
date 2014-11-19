@@ -33,7 +33,7 @@ import           Data.Tuple    (swap)
 import           Boar.Util.Fixpoint
 
 -- | A structure that maps each value in the domain to zero or more values in
--- the range.
+-- the range. 
 newtype MultiMap a b = MultiMap { toMap :: Map a (Set b) }
   deriving (Eq, Ord)
 

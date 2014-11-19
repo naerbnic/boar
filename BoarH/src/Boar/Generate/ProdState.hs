@@ -3,7 +3,12 @@ module Boar.Generate.ProdState where
 import           Boar.Base.Rule (Rule(..))
 import qualified Boar.Base.Rule as Rule
 import           Control.Monad (liftM)
-import           Data.Maybe    (isNothing)
+import           Data.Maybe    (isNothing, catMaybes)
+import           Data.Set      (Set)
+import qualified Data.Set      as Set
+import qualified Boar.Data.MultiMap as MM
+import           Data.Map      (Map)
+import qualified Data.Map      as Map
 
 -- Helpers
 -----------
@@ -12,6 +17,18 @@ listIndexMaybe :: [a] -> Int -> Maybe a
 listIndexMaybe (a:_) 0 = Just a
 listIndexMaybe (_:r) i | i > 0 = listIndexMaybe r (i - 1)
 listIndexMaybe _ _ = Nothing
+
+catMaybeSet :: Ord a => Set (Maybe a) -> Set a
+catMaybeSet = Set.fromList . catMaybes . Set.toList
+
+setMapMaybe :: Ord b => (a -> Maybe b) -> Set a -> Set b
+setMapMaybe f s = catMaybeSet $ Set.map f s
+
+recombine :: (Ord a, Ord b) => Set (a, b) -> Map a (Set b)
+recombine = MM.toMap . MM.from
+
+-- ProdState
+------------
 
 -- | Represents a cursor position within a rule. Classically, this is
 -- represented with a dot at the appropriate location in a rule.
@@ -67,3 +84,24 @@ inc = liftM snd . step
 -- 'Nothing' if it the element was different, or incomplete.
 next :: (Eq a) => a -> ProdState a -> Maybe (ProdState a)
 next e ps = if atPoint ps == Just e then inc ps else Nothing
+
+nullableClosure :: Ord a => Set a -> ProdState a -> Set (ProdState a)
+nullableClosure nullables ps = case step ps of
+  Nothing -> Set.singleton ps
+  Just (el, ps') ->
+    Set.singleton ps `Set.union` if el `Set.member` nullables
+      then nullableClosure nullables ps'
+      else Set.empty
+      
+-- Functions on sets of prodstates
+
+nextsOfSet :: Ord a => Set (ProdState a) -> [(a, Set (ProdState a))]
+nextsOfSet st = let
+  rulePairs = setMapMaybe step st
+  recombinedSets = recombine rulePairs
+  in Map.toList recombinedSets
+  
+completedOfSet :: Ord a => Set (ProdState a) -> Set (Rule a)
+completedOfSet =
+  setMapMaybe $ \ps@(ProdState r _) ->
+    if complete ps then Just r else Nothing

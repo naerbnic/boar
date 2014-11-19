@@ -14,20 +14,21 @@ executable BoarH
                    mtl >=2.1.3 && <2.2
   ghc-options:     -Wall
   other-modules:   
-                   Parser.Earley,
-                   ParseData.Action,
-                   ParseData.StateTable,
-                   Boar.Util.Wrapped,
+                   Boar.Base.Grammar,
+                   Boar.Base.Rule,
+                   Boar.Data.Bundle,
+                   Boar.Data.Graph,
+                   Boar.Data.IRef,
+                   Boar.Data.MultiMap,
+                   Boar.Generate.EarleyStates,
+                   Boar.Generate.ParseState,
+                   Boar.Generate.ProdState,
                    Boar.Util.ConstrainedFunctor,
                    Boar.Util.Fixpoint,
-                   Boar.Data.Bundle,
-                   Boar.Data.MultiMap,
-                   Boar.Data.Graph,
-                   Boar.Base.Rule,
-                   Boar.Base.Grammar,
-                   Boar.Generate.EarleyStates,
-                   Boar.Generate.ProdState,
-                   Boar.Generate.ParseState
+                   Boar.Util.Wrapped,
+                   ParseData.Action,
+                   ParseData.StateTable,
+                   Parser.Earley
 
 test-suite GraphTest
   type:            exitcode-stdio-1.0

@@ -67,6 +67,9 @@ createNullables g = fixpointEq nextNullables S.empty
     nextNullables ns =
       S.map Rule.lhs $
       S.filter (Rule.isNullable ns) (rules g)
+      
+startRules :: Ord a => Grammar a -> Set (Rule a)
+startRules g = ntermRules g $ start g 
 
 data FullElem a
   = Start
