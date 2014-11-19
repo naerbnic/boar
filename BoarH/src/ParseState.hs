@@ -19,7 +19,7 @@ import qualified Data.Set           as S
 import           Data.Tuple         (swap)
 import           Boar.Base.Grammar            hiding (start)
 import qualified Boar.Base.Grammar            as G
-import           Boar.Base.ProdState
+import           Boar.Generate.ProdState
 
 -- Helpers 
 

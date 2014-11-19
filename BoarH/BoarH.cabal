@@ -25,9 +25,9 @@ executable BoarH
                    Boar.Data.MultiMap,
                    Boar.Data.Graph,
                    Boar.Base.Rule,
-                   Boar.Base.ProdState,
                    Boar.Base.Grammar,
-                   Boar.Generate.EarleyStates
+                   Boar.Generate.EarleyStates,
+                   Boar.Generate.ProdState
 
 test-suite GraphTest
   type:            exitcode-stdio-1.0
