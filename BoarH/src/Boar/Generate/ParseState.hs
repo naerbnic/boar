@@ -1,5 +1,5 @@
 module Boar.Generate.ParseState
-  ( State
+  ( ParseState
   , stateNexts
   , expandProdStateNullable
   , expandProdStateNT
@@ -37,34 +37,34 @@ mapFst :: (a -> b) -> (a, c) -> (b, c)
 mapFst f (a, b) = (f a, b)
 
 -- | A parse state defined as a collection of production states.
-type State a = Set (ProdState a)
+type ParseState a = Set (ProdState a)
 
-stateNexts :: Ord a => State a -> [(State a, a)]
+stateNexts :: Ord a => ParseState a -> [(ParseState a, a)]
 stateNexts st = map swap $ M.toList $ MM.toMap $ MM.from $ mapMaybeSet step st
 
-expandNTerm :: Ord a => Grammar a -> a -> State a
+expandNTerm :: Ord a => Grammar a -> a -> ParseState a
 expandNTerm g nt = S.map start $ ntermRules g nt
 
-initialState :: Ord a => Grammar a -> State a
+initialState :: Ord a => Grammar a -> ParseState a
 initialState g = expandClosure g (expandNTerm g (G.start g))
 
-expandProdStateNT :: Ord a => Grammar a -> ProdState a -> State a
+expandProdStateNT :: Ord a => Grammar a -> ProdState a -> ParseState a
 expandProdStateNT g ps = case atPoint ps of
   Just nt | isnterm g nt -> expandNTerm g nt
   _ -> S.empty
 
-expandProdStateNullable :: Ord a => Grammar a -> ProdState a -> State a
+expandProdStateNullable :: Ord a => Grammar a -> ProdState a -> ParseState a
 expandProdStateNullable g ps = maybeToSet $ do
   pt <- atPoint ps
   if pt `S.member` nullables g
     then inc ps
     else Nothing
 
-expandClosure :: Ord a => Grammar a -> State a -> State a
+expandClosure :: Ord a => Grammar a -> ParseState a -> ParseState a
 expandClosure g = fixpointSet
   (mergeSetFunctions [expandProdStateNT g, expandProdStateNullable g])
 
-createLR0States :: Ord a => Grammar a -> Graph (State (FullElem a)) () (Maybe a)
+createLR0States :: Ord a => Grammar a -> Graph (ParseState (FullElem a)) () (Maybe a)
 createLR0States g = GR.unfold
     traverse
     GR.combineEq

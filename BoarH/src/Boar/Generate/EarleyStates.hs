@@ -66,7 +66,7 @@ data StateCollection k a = StateCollection
 
 -- | Creates a result state given an incomplete transition state, such as
 -- the result of stateNexts.
-nextToResultStates :: Ord a => Grammar a -> State a -> ResultStates (State a)
+nextToResultStates :: Ord a => Grammar a -> ParseState a -> ResultStates (ParseState a)
 nextToResultStates g st = let
   -- Nullable expand everything in this state, as those will all share the
   -- same origin
@@ -82,7 +82,7 @@ nextToResultStates g st = let
                   (if S.null freshSet then Nothing else Just freshSet)
 
 -- | Creates the Earley info for a parse state
-stateTransitions :: Ord a => Grammar a -> State a -> Map a (ResultStates (State a))
+stateTransitions :: Ord a => Grammar a -> ParseState a -> Map a (ResultStates (ParseState a))
 stateTransitions g st = let
   nexts = stateNexts st
   in M.map (nextToResultStates g) $ M.fromList (map swap nexts)
@@ -100,13 +100,13 @@ transStates m = let
     Just st -> S.singleton st
   in S.unions $ map resultStates results
 
-earleyStates :: Ord a => Grammar a -> Set (State a)
+earleyStates :: Ord a => Grammar a -> Set (ParseState a)
 earleyStates g = let
   expandedInitialState = expandClosure g (initialState g)
   in fixpointSet (transStates . stateTransitions g)
                  (S.singleton expandedInitialState)
 
-earleyStateCollection :: Ord a => Grammar a -> StateCollection (State a) a
+earleyStateCollection :: Ord a => Grammar a -> StateCollection (ParseState a) a
 earleyStateCollection g = let
   stateTransitionsMap = setToMap (stateTransitions g) (earleyStates g)
   incStatesSet = incStates stateTransitionsMap
