@@ -26,7 +26,7 @@ data ProdState a = ProdState
 instance Show a => Show (ProdState a) where 
   show (ProdState (l :=> r) i) =
     let (pre, post) = splitAt i r
-    in show l ++ " -> " ++ unwords ( map show pre ++ ["."] ++ map show post )
+    in unwords ( [show l, ":->"] ++ map show pre ++ ["."] ++ map show post )
 
 -- | For a production state @a -> b . c@, returns @a@.
 lhs :: ProdState a -> a

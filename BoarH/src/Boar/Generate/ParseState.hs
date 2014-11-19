@@ -1,4 +1,4 @@
-module ParseState
+module Boar.Generate.ParseState
   ( State
   , stateNexts
   , expandProdStateNullable

@@ -11,7 +11,7 @@ import qualified Data.Map           as M
 import           Data.Set           (Set)
 import qualified Data.Set           as S
 import           Data.Tuple         (swap)
-import           ParseState
+import           Boar.Generate.ParseState
 import           Boar.Base.Grammar
 import qualified Boar.Generate.ProdState          as PS
 
