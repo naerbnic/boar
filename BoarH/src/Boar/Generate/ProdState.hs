@@ -1,4 +1,18 @@
-module Boar.Generate.ProdState where
+module Boar.Generate.ProdState
+  ( ProdState(ProdState)
+  , rule
+  , preDot
+  , postDot
+  , start
+  , step
+  , complete
+  , atPoint
+  , inc
+  , next
+  , nullableClosure
+  , nextsOfSet
+  , completeOfSet
+  ) where
 
 import           Boar.Base.Rule (Rule(..))
 import qualified Boar.Base.Rule as Rule
@@ -48,6 +62,12 @@ instance Show a => Show (ProdState a) where
 -- | For a production state @a -> b . c@, returns @a@.
 lhs :: ProdState a -> a
 lhs (ProdState (lh :=> _) _) = lh
+
+preDot :: ProdState a -> [a]
+preDot (ProdState (_ :=> rh) i) = take i rh
+
+postDot :: ProdState a -> [a]
+postDot (ProdState (_ :=> rh) i) = drop i rh
 
 -- | For a rule @a -> b c@, returns the production state @a -> . b c@.
 start :: Rule a -> ProdState a
@@ -101,7 +121,7 @@ nextsOfSet st = let
   recombinedSets = recombine rulePairs
   in Map.toList recombinedSets
   
-completedOfSet :: Ord a => Set (ProdState a) -> Set (Rule a)
-completedOfSet =
+completeOfSet :: Ord a => Set (ProdState a) -> Set (Rule a)
+completeOfSet =
   setMapMaybe $ \ps@(ProdState r _) ->
     if complete ps then Just r else Nothing
