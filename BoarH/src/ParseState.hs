@@ -17,11 +17,15 @@ import           Data.Maybe         (catMaybes)
 import           Data.Set           (Set)
 import qualified Data.Set           as S
 import           Data.Tuple         (swap)
-import           Grammar            hiding (lhs, start)
+import           Grammar            hiding (start)
 import qualified Grammar            as G
 import           ProdState
 
--- Helpers
+-- Helpers 
+
+maybeToSet :: Maybe a -> Set a
+maybeToSet Nothing = S.empty
+maybeToSet (Just a) = S.singleton a
 
 catMaybeSet :: Ord a => Set (Maybe a) -> Set a
 catMaybeSet = S.fromList . catMaybes . S.toList
@@ -39,9 +43,7 @@ stateNexts :: Ord a => State a -> [(State a, a)]
 stateNexts st = map swap $ M.toList $ MM.toMap $ MM.from $ mapMaybeSet step st
 
 expandNTerm :: Ord a => Grammar a -> a -> State a
-expandNTerm g nt = S.fromList $ do
-  r <- ntermRules g nt
-  return $ start r
+expandNTerm g nt = S.map start $ ntermRules g nt
 
 initialState :: Ord a => Grammar a -> State a
 initialState g = expandClosure g (expandNTerm g (G.start g))

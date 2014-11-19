@@ -26,7 +26,8 @@ executable BoarH
                    Boar.Util.Fixpoint,
                    Boar.Data.Bundle,
                    Boar.Data.MultiMap,
-                   Boar.Data.Graph
+                   Boar.Data.Graph,
+                   Boar.Base.Rule
 
 test-suite GraphTest
   type:            exitcode-stdio-1.0
@@ -47,7 +48,8 @@ test-suite GraphTest
                   Boar.Util.Wrapped,
                   Boar.Util.ConstrainedFunctor,
                   Boar.Data.Bundle,
-                  Boar.Data.Graph
+                  Boar.Data.Graph,
+                  Boar.Base.Rule
   hs-source-dirs:  
                   test,
                   src 

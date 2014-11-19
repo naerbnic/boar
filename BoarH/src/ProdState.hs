@@ -1,18 +1,12 @@
 module ProdState where
 
+import           Boar.Base.Rule (Rule(..))
+import qualified Boar.Base.Rule as Rule
 import           Control.Monad (liftM)
 import           Data.Maybe    (isNothing)
-import           Data.Set      (Set)
-import qualified Data.Set      as S
-import           Grammar
-import qualified Grammar       as G
 
 -- Helpers
 -----------
-
-maybeToSet :: Maybe a -> Set a
-maybeToSet Nothing = S.empty
-maybeToSet (Just a) = S.singleton a
 
 listIndexMaybe :: [a] -> Int -> Maybe a
 listIndexMaybe (a:_) 0 = Just a
@@ -29,14 +23,14 @@ data ProdState a = ProdState
   , pos  :: Int
   } deriving (Eq, Ord)
 
-instance Show a => Show (ProdState a) where
-  show (ProdState (Rule l r) i) =
+instance Show a => Show (ProdState a) where 
+  show (ProdState (l :=> r) i) =
     let (pre, post) = splitAt i r
     in show l ++ " -> " ++ unwords ( map show pre ++ ["."] ++ map show post )
 
 -- | For a production state @a -> b . c@, returns @a@.
 lhs :: ProdState a -> a
-lhs (ProdState r _) = G.lhs r
+lhs (ProdState (lh :=> _) _) = lh
 
 -- | For a rule @a -> b c@, returns the production state @a -> . b c@.
 start :: Rule a -> ProdState a
@@ -46,8 +40,8 @@ start r = ProdState r 0
 -- end, and return the 'Just' of the advanced-over element, and the advanced
 -- prod state, or 'Nothing' if the point is at the end
 step :: ProdState a -> Maybe (a, ProdState a)
-step (ProdState r@(Rule _ prod) i) = do
-  a <- listIndexMaybe prod i
+step (ProdState r i) = do
+  a <- listIndexMaybe (Rule.rhs r) i
   return (a, ProdState r (i + 1))
 
 -- | Returns true if the dot in the production state is at the end.
