@@ -101,5 +101,3 @@ nullableClosure nullables ps = case step ps of
     Set.singleton ps `Set.union` if el `Set.member` nullables
       then nullableClosure nullables ps'
       else Set.empty
-      
--- Functions on sets of prodstates

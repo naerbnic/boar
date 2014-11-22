@@ -11,7 +11,8 @@ executable BoarH
                    base >= 4,
                    containers >=0.5.0 && <0.6,
                    data-reify >=0.6 && <0.7,
-                   mtl >=2.1.3 && <2.2
+                   mtl >=2.1.3 && <2.2,
+                   hashtables >=1.1.2 && <1.2
   ghc-options:     -Wall
   other-modules:   
                    Boar.Base.Grammar,
@@ -25,11 +26,13 @@ executable BoarH
                    Boar.Generate.ProdState,
                    Boar.Util.ConstrainedFunctor,
                    Boar.Util.Fixpoint,
-                   Boar.Util.Wrapped,
                    ParseData.Action,
                    ParseData.StateTable,
                    Parser.Earley,
-                   Boar.Generate.ProdStateSet
+                   Boar.Generate.ProdStateSet,
+                   Boar.Util.Lens,
+                   Boar.Util.Memo,
+                   Boar.Util.Mergeable
 
 test-suite GraphTest
   type:            exitcode-stdio-1.0
@@ -45,14 +48,16 @@ test-suite GraphTest
                   Parser.Earley,
                   ParseData.Action,
                   ParseData.StateTable,
-                  Boar.Util.Wrapped,
                   Boar.Util.ConstrainedFunctor,
                   Boar.Data.Bundle,
                   Boar.Data.Graph,
                   Boar.Base.Rule,
                   Boar.Generate.EarleyStates,
                   Boar.Generate.ParseState,
-                  Boar.Generate.ProdStateSet
+                  Boar.Generate.ProdStateSet,
+                  Boar.Util.Lens,
+                  Boar.Util.Memo,
+                  Boar.Util.Mergeable
   hs-source-dirs:  
                   test,
                   src 
