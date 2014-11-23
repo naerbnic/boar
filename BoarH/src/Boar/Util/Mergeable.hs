@@ -3,6 +3,7 @@
 module Boar.Util.Mergeable
   ( Mergeable(..)
   , MergeSet
+  , MergeableOrd(..)
 
   , fromList
   , toList
@@ -34,6 +35,13 @@ instance Mergeable m => Mergeable (MergeSet m) where
   type MergeKey (MergeSet m) = Set (MergeKey m)
   extractKey = extractKeySet
   merge = union
+  
+newtype MergeableOrd m = MergeableOrd m
+
+instance Ord m => Mergeable (MergeableOrd m) where
+  type MergeKey (MergeableOrd m) = m
+  extractKey (MergeableOrd m) = m
+  merge = const
 
 -- General operations
 

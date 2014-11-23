@@ -24,7 +24,6 @@ executable BoarH
                    Boar.Generate.EarleyStates,
                    Boar.Generate.ParseState,
                    Boar.Generate.ProdState,
-                   Boar.Util.ConstrainedFunctor,
                    Boar.Util.Fixpoint,
                    ParseData.Action,
                    ParseData.StateTable,
@@ -32,7 +31,8 @@ executable BoarH
                    Boar.Generate.ProdStateSet,
                    Boar.Util.Lens,
                    Boar.Util.Memo,
-                   Boar.Util.Mergeable
+                   Boar.Util.Mergeable,
+                   Boar.Util.Container
 
 test-suite GraphTest
   type:            exitcode-stdio-1.0
@@ -48,7 +48,6 @@ test-suite GraphTest
                   Parser.Earley,
                   ParseData.Action,
                   ParseData.StateTable,
-                  Boar.Util.ConstrainedFunctor,
                   Boar.Data.Bundle,
                   Boar.Data.Graph,
                   Boar.Base.Rule,
@@ -57,7 +56,8 @@ test-suite GraphTest
                   Boar.Generate.ProdStateSet,
                   Boar.Util.Lens,
                   Boar.Util.Memo,
-                  Boar.Util.Mergeable
+                  Boar.Util.Mergeable,
+                  Boar.Util.Container
   hs-source-dirs:  
                   test,
                   src 

@@ -1,7 +1,7 @@
-{-# LANGUAGE TypeFamilies #-}
 {-# LANGUAGE ConstraintKinds #-}
+{-# LANGUAGE TypeFamilies #-}
 
-module Boar.Util.ConstrainedFunctor where
+module Boar.Util.Container where
 
 import GHC.Exts (Constraint)
 import Prelude hiding (concat)
