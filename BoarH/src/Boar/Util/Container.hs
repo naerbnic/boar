@@ -9,35 +9,45 @@ import qualified Prelude as Pre
 import qualified Data.Maybe as May
 import Data.Set (Set)
 import qualified Data.Set as Set
+import Data.Map (Map)
+import qualified Data.Map as Map
   
 class Container co where
-  type ValidElem co a :: Constraint
+  type Elem co a :: Constraint
   
-  empty :: ValidElem co a => co a
-  null :: ValidElem co a => co a -> Bool
-  singleton :: ValidElem co a => a -> co a
-  concat :: ValidElem co a => [co a] -> co a
+  empty :: Elem co a => co a
+  null :: Elem co a => co a -> Bool
+  singleton :: Elem co a => a -> co a
+  concat :: Elem co a => [co a] -> co a
+  size :: Elem co a => co a -> Int
   
-  fromList :: ValidElem co a => [a] -> co a
-  fromList = concat . Pre.map singleton
+  fromList :: Elem co a => [a] -> co a
+  toList :: Elem co a => co a -> [a]
   
-  toList :: ValidElem co a => co a -> [a]
+  mapMaybe :: (Elem co a, Elem co b) => (a -> Maybe b) -> co a -> co b
   
-  mapMaybe :: (ValidElem co a, ValidElem co b) => (a -> Maybe b) -> co a -> co b
-  
-  map :: (ValidElem co a, ValidElem co b) => (a -> b) -> co a -> co b
+  map :: (Elem co a, Elem co b) => (a -> b) -> co a -> co b
   map f = mapMaybe (Just . f)
   
-  filter :: (ValidElem co a) => (a -> Bool) -> co a -> co a
+  filter :: (Elem co a) => (a -> Bool) -> co a -> co a
   filter f = mapMaybe (\x -> if f x then Just x else Nothing)
   
+class Container co => Indexable co where
+  type Key co a :: *
+  type Value co a :: *
+  
+  index :: Elem co a => co a -> Key co a -> Maybe (Value co a)
+  
+-- Instances
+  
 instance Container [] where
-  type ValidElem [] a = ()
+  type Elem [] a = ()
   
   empty = []
   null = Pre.null
   singleton x = [x]
   concat = Pre.concat
+  size = Pre.length
   
   fromList = id
   toList = id
@@ -46,13 +56,23 @@ instance Container [] where
   map = Pre.map
   filter = Pre.filter
   
+instance Indexable [] where
+  type Key [] a = Int
+  type Value [] a = a
+  
+  index [] _ = Nothing
+  index (a:r) i = if i == 0
+    then Just a
+    else index r (i - 1)
+  
 instance Container Set where
-  type ValidElem Set a = Ord a
+  type Elem Set a = Ord a
   
   empty = Set.empty
   null = Set.null
   singleton = Set.singleton
   concat = Set.unions
+  size = Set.size
   
   fromList = Set.fromList
   toList = Set.toList
@@ -62,5 +82,5 @@ instance Container Set where
   map = Set.map
   filter = Set.filter
   
-concatMap :: (Container co, ValidElem co a, ValidElem co b) => (a -> co b) -> co a -> co b
+concatMap :: (Container co, Elem co a, Elem co b) => (a -> co b) -> co a -> co b
 concatMap f = concat . Pre.map f . toList
